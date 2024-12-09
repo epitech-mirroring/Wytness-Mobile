@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/onboarding/onboard.dart';
 import 'package:mobile/pages/home.dart';
 import 'package:mobile/service/workflows.dart';
 
@@ -33,7 +34,10 @@ class EntryPointPage extends StatefulWidget {
 class _EntryPointPageState extends State<EntryPointPage> {
   WorkflowService workflowService = WorkflowService();
   Widget pageEntrypointPage() {
-    return  HomePage(workflow: workflowService,);
+    return OnBoardPage();
+    return HomePage(
+      workflow: workflowService,
+    );
   }
 
   @override
