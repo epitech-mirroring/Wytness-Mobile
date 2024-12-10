@@ -1,17 +1,15 @@
+import 'dart:ui';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
-import 'dart:io';
+import 'package:mobile/animations/w_row.dart';
 
 import 'package:mobile/constants/const.dart';
 
 class EmailPage extends StatefulWidget {
   final String? name;
-  final String? bio;
-  final String? link;
-  final File? image;
 
-  const EmailPage({super.key, this.name, this.bio, this.link, this.image});
+  const EmailPage({super.key, this.name});
   @override
   State<StatefulWidget> createState() => _SignupState();
 }
@@ -36,40 +34,144 @@ class _SignupState extends State<EmailPage> {
   }
 
   Widget _body(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Stack(
       children: [
-        sh(130),
-        const Text(
-          "Create an account with your email address",
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
+        Transform.scale(
+          scaleX: -1,
+          child: Transform.rotate(
+            angle: 0.2,
+            child: const AnimatedScreen(),
           ),
-          textAlign: TextAlign.center,
         ),
-        sh(30),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            children: [
-              _entryFeild(
-                'Enter email',
-                controller: _emailController,
-                isEmail: true,
+        Center(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: Colors.grey,
+                    width: 1,
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  color: Colors.white.withOpacity(0.1),
+                ),
+                width: dw(context) / 1.2,
+                height: dh(context) / 1.7,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Welcome Back!",
+                      style: TextStyle(
+                        fontSize: 25,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    sh(10),
+                    const Text(
+                      "Enter your email and password to continue",
+                      style: TextStyle(
+                        fontSize: 13,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        children: [
+                          _entryFeild(
+                            'Enter email',
+                            controller: _emailController,
+                            isEmail: true,
+                          ),
+                          _entryFeild(
+                            'Enter password',
+                            controller: _passwordController,
+                            isPassword: true,
+                          ),
+                          sh(10),
+                          _submitButton(context),
+                          sh(20),
+                          Container(
+                            color: Colors.grey,
+                            height: 0.5,
+                            width: dw(context) / 1.2,
+                          ),
+                          sh(20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Container(
+                                height: 40,
+                                width: 120,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(5),
+                                      child: Image.asset(
+                                        'assets/signin/google.png',
+                                      ),
+                                    ),
+                                    sw(5),
+                                    const Text(
+                                      'Google',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    sw(5),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                height: 40,
+                                width: 120,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Padding(
+                                      padding: EdgeInsets.all(3),
+                                      child: Icon(
+                                        Icons.apple_outlined,
+                                        size: 26,
+                                      ),
+                                    ),
+                                    sw(5),
+                                    const Text(
+                                      'Apple',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    sw(5),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          )
+                        ],
+                      ),
+                    )
+                  ],
+                ),
               ),
-              _entryFeild(
-                'Enter password',
-                controller: _passwordController,
-                isPassword: true,
-              ),
-              Container(
-                height: MediaQuery.of(context).size.height / 10,
-              ),
-              _submitButton(context),
-            ],
+            ),
           ),
-        )
+        ),
       ],
     );
   }
@@ -82,6 +184,10 @@ class _SignupState extends State<EmailPage> {
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(5),
+      ),
       child: TextField(
         keyboardAppearance: Brightness.dark,
         controller: controller,
@@ -95,6 +201,7 @@ class _SignupState extends State<EmailPage> {
           contentPadding: const EdgeInsets.all(0.0),
           labelText: hint,
           hintText: hint,
+          fillColor: Colors.white,
           labelStyle: const TextStyle(
             fontSize: 14.0,
             fontWeight: FontWeight.w400,
@@ -108,20 +215,20 @@ class _SignupState extends State<EmailPage> {
           ),
           enabledBorder: OutlineInputBorder(
             borderSide: const BorderSide(
-              color: Color.fromARGB(255, 163, 163, 163),
-              width: 1.5,
+              color: Colors.grey,
+              width: 1,
             ),
-            borderRadius: BorderRadius.circular(10.0),
+            borderRadius: BorderRadius.circular(5),
           ),
           floatingLabelStyle: const TextStyle(
             fontSize: 18.0,
           ),
           focusedBorder: OutlineInputBorder(
             borderSide: const BorderSide(
-              color: Color.fromARGB(255, 61, 61, 61),
-              width: 1.5,
+              color: Colors.grey,
+              width: 1,
             ),
-            borderRadius: BorderRadius.circular(10.0),
+            borderRadius: BorderRadius.circular(5),
           ),
         ),
       ),
@@ -129,31 +236,13 @@ class _SignupState extends State<EmailPage> {
   }
 
   Widget _submitButton(BuildContext context) {
-    return Container(
-      height: 164,
-      color: Colors.transparent,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 20, right: 20, bottom: 40),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CupertinoButton(
-                  onPressed: _submitForm,
-                  color: Colors.blue,
-                  child: const Text(
-                    "Continuer",
-                    style: TextStyle(
-                      fontFamily: "icons.ttf",
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ],
-            )
-          ],
+    return CupertinoButton(
+      onPressed: _submitForm,
+      color: const Color(0xff574ae2),
+      child: const Text(
+        "Login",
+        style: TextStyle(
+          fontSize: 18,
         ),
       ),
     );
@@ -216,7 +305,14 @@ class _SignupState extends State<EmailPage> {
       key: _scaffoldKey,
       appBar: AppBar(
         elevation: 0,
-        title: const Text('Login'),
+        title: const Text(
+          'Wytness',
+          style: TextStyle(
+            color: Color(0xff574ae2),
+            fontSize: 30,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: _body(context),
     );
