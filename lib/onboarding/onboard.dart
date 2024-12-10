@@ -187,7 +187,7 @@ class _OnBoardState extends State<OnBoardPage> {
                         imageUrl: model["image"],
                         fit: BoxFit.cover,
                         placeholder: (context, url) => Container(
-                          color: Colors.grey,
+                          // color: Colors.grey,
                           height: 100,
                           width: 100,
                         ),

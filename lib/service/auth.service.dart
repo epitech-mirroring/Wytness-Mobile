@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
@@ -8,7 +9,8 @@ class AuthService {
   static Future<String> login(String email, String password) async {
     try {
       http.Response response = await http.post(
-        Uri.parse('http://localhost:3000/auth/login'),
+        Uri.parse(
+            'http://${Platform.isIOS ? 'localhost' : '10.0.2.2'}:3000/auth/login'),
         body: {
           'email': email,
           'password': password,
@@ -36,7 +38,8 @@ class AuthService {
   ) async {
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:3000/auth/register'),
+        Uri.parse(
+            'http://${Platform.isIOS ? 'localhost' : '10.0.2.2'}:3000/auth/register'),
         body: {
           'email': email,
           'password': password,
