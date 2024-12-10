@@ -6,6 +6,8 @@ import 'package:flutter_svg/svg.dart';
 import 'package:mobile/animations/w_row.dart';
 
 import 'package:mobile/constants/const.dart';
+import 'package:mobile/pages/home.dart';
+import 'package:mobile/service/auth.service.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -15,12 +17,16 @@ class SignupPage extends StatefulWidget {
 
 class _SignupState extends State<SignupPage> {
   late TextEditingController _emailController;
+  late TextEditingController _nameController;
+  late TextEditingController _surnameController;
   late TextEditingController _passwordController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
     _emailController = TextEditingController();
+    _surnameController = TextEditingController();
+    _nameController = TextEditingController();
     _passwordController = TextEditingController();
     super.initState();
   }
@@ -42,130 +48,147 @@ class _SignupState extends State<SignupPage> {
             child: const AnimatedScreen(),
           ),
         ),
-        Center(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Colors.grey,
-                    width: 1,
+        Padding(
+          padding: const EdgeInsets.only(top: 30),
+          child: Center(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: Colors.grey,
+                      width: 1,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.white.withOpacity(0.1),
                   ),
-                  borderRadius: BorderRadius.circular(10),
-                  color: Colors.white.withOpacity(0.1),
-                ),
-                width: dw(context) / 1.2,
-                height: dh(context) / 1.7,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "Welcome to Wytness!",
-                      style: TextStyle(
-                        fontSize: 25,
-                        fontWeight: FontWeight.w700,
+                  width: dw(context) / 1.2,
+                  height: dh(context) / 1.4,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Welcome to Wytness!",
+                        style: TextStyle(
+                          fontSize: 25,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    sh(10),
-                    const Text(
-                      "Enter your email and password to continue",
-                      style: TextStyle(
-                        fontSize: 13,
+                      sh(10),
+                      const Text(
+                        "Enter your email and password to continue",
+                        style: TextStyle(
+                          fontSize: 13,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        children: [
-                          _entryFeild(
-                            'Enter email',
-                            controller: _emailController,
-                            isEmail: true,
-                          ),
-                          _entryFeild(
-                            'Enter password',
-                            controller: _passwordController,
-                            isPassword: true,
-                          ),
-                          sh(10),
-                          _submitButton(context),
-                          sh(20),
-                          Container(
-                            color: Colors.grey,
-                            height: 0.5,
-                            width: dw(context) / 1.2,
-                          ),
-                          sh(20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Container(
-                                height: 40,
-                                width: 120,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(5),
-                                      child: Image.asset(
-                                        'assets/signin/google.png',
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          children: [
+                            _entryFeild(
+                              CupertinoIcons.person,
+                              'Name',
+                              controller: _nameController,
+                              isEmail: true,
+                            ),
+                            _entryFeild(
+                              CupertinoIcons.person,
+                              'Surname',
+                              controller: _surnameController,
+                              isEmail: true,
+                            ),
+                            _entryFeild(
+                              CupertinoIcons.mail,
+                              'Enter email',
+                              controller: _emailController,
+                              isEmail: true,
+                            ),
+                            _entryFeild(
+                              CupertinoIcons.padlock,
+                              'Enter password',
+                              controller: _passwordController,
+                              isPassword: true,
+                            ),
+                            sh(10),
+                            _submitButton(context),
+                            sh(20),
+                            Container(
+                              color: Colors.grey,
+                              height: 0.5,
+                              width: dw(context) / 1.2,
+                            ),
+                            sh(20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Container(
+                                  height: 40,
+                                  width: 120,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(5),
+                                        child: Image.asset(
+                                          'assets/signin/google.png',
+                                        ),
                                       ),
-                                    ),
-                                    sw(5),
-                                    const Text(
-                                      'Google',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
+                                      sw(5),
+                                      const Text(
+                                        'Google',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
-                                    ),
-                                    sw(5),
-                                  ],
+                                      sw(5),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              Container(
-                                height: 40,
-                                width: 120,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(5),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Padding(
-                                      padding: EdgeInsets.all(3),
-                                      child: Icon(
-                                        Icons.apple_outlined,
-                                        size: 26,
+                                Container(
+                                  height: 40,
+                                  width: 120,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Padding(
+                                        padding: EdgeInsets.all(3),
+                                        child: Icon(
+                                          Icons.apple_outlined,
+                                          size: 26,
+                                        ),
                                       ),
-                                    ),
-                                    sw(5),
-                                    const Text(
-                                      'Apple',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
+                                      sw(5),
+                                      const Text(
+                                        'Apple',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
-                                    ),
-                                    sw(5),
-                                  ],
+                                      sw(5),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          )
-                        ],
-                      ),
-                    )
-                  ],
+                              ],
+                            )
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -176,6 +199,7 @@ class _SignupState extends State<SignupPage> {
   }
 
   Widget _entryFeild(
+    IconData icon,
     String hint, {
     required TextEditingController controller,
     bool isPassword = false,
@@ -209,7 +233,7 @@ class _SignupState extends State<SignupPage> {
             fontSize: 14.0,
           ),
           prefixIcon: Icon(
-            isPassword ? CupertinoIcons.lock_fill : CupertinoIcons.mail_solid,
+            icon,
             size: 18,
           ),
           enabledBorder: OutlineInputBorder(
@@ -247,12 +271,50 @@ class _SignupState extends State<SignupPage> {
     );
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_emailController.text.length > 30) {
       return;
     }
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       return;
+    }
+    final message = await AuthService.register(
+      _emailController.text,
+      _passwordController.text,
+      _nameController.text,
+      _surnameController.text,
+    );
+    if (message == 'token') {
+      Navigator.pushAndRemoveUntil(
+        context,
+        CupertinoPageRoute<Widget>(
+          builder: (BuildContext context) => HomePage(
+            workflow: workflowService,
+          ),
+        ),
+        (Route route) => true,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(40),
+              topRight: Radius.circular(40),
+            ),
+          ),
+          backgroundColor: const Color(0xff574ae2),
+          content: Text(
+            message,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
     }
   }
 
