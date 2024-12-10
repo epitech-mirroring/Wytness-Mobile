@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/model/workflows.module.dart';
 import 'package:mobile/pages/home.dart';
 import 'package:mobile/pages/workflow.dart';
-import 'package:mobile/service/workflows.dart';
+import 'package:mobile/service/workflows.service.dart';
 import 'package:uuid/uuid.dart';
 
 void main() {

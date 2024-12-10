@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:mobile/constants/const.dart';
 import 'package:mobile/pages/workflow.dart';
-import 'package:mobile/service/workflows.dart';
+import 'package:mobile/service/workflows.service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.workflow});

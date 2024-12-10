@@ -8,7 +8,7 @@ import 'package:mobile/constants/const.dart';
 import 'package:mobile/model/apis.module.dart';
 import 'package:mobile/model/workflows.module.dart';
 import 'package:mobile/pages/widget/modal.dart';
-import 'package:mobile/service/workflows.dart';
+import 'package:mobile/service/workflows.service.dart';
 import 'package:uuid/uuid.dart';
 
 class WorkflowPage extends StatefulWidget {
