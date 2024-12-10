@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile/constants/const.dart';
 
@@ -7,7 +9,8 @@ class AuthService {
   static Future<String> login(String email, String password) async {
     try {
       http.Response response = await http.post(
-        Uri.parse('http://localhost:3000/auth/login'),
+        Uri.parse(
+            'http://${Platform.isIOS ? 'localhost' : '10.0.2.2'}:3000/auth/login'),
         body: {
           'email': email,
           'password': password,
@@ -15,6 +18,7 @@ class AuthService {
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 201) {
+        FirebaseAuth.instance.signInWithCustomToken(data['token']);
         localUser.setString('token', data['token']);
         return 'token';
       } else {
@@ -34,7 +38,8 @@ class AuthService {
   ) async {
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:3000/auth/register'),
+        Uri.parse(
+            'http://${Platform.isIOS ? 'localhost' : '10.0.2.2'}:3000/auth/register'),
         body: {
           'email': email,
           'password': password,
@@ -45,6 +50,7 @@ class AuthService {
       Map<String, dynamic> data = jsonDecode(response.body);
       if (response.statusCode == 201) {
         if (data.containsKey('token')) {
+          FirebaseAuth.instance.signInWithCustomToken(data['token']);
           localUser.setString('token', data['token']);
           return 'token';
         } else {

@@ -186,6 +186,13 @@ class _OnBoardState extends State<OnBoardPage> {
                       child: CachedNetworkImage(
                         imageUrl: model["image"],
                         fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          // color: Colors.grey,
+                          height: 100,
+                          width: 100,
+                        ),
+                        errorWidget: (context, url, error) =>
+                            const Icon(Icons.error),
                       ),
                     ),
                   ),

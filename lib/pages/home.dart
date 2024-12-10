@@ -1,11 +1,17 @@
+import 'dart:convert';
 import 'dart:ui';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:mobile/constants/const.dart';
+import 'package:mobile/pages/profile.dart';
 import 'package:mobile/pages/workflow.dart';
 import 'package:mobile/service/workflows.service.dart';
+import 'package:http/http.dart' as http;
+import 'package:webview_flutter/webview_flutter.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.workflow});
@@ -49,6 +55,23 @@ class _HomePageState extends State<HomePage> {
                 surfaceTintColor: Colors.transparent,
                 pinned: true,
                 stretch: true,
+                actions: [
+                  IconButton(
+                    onPressed: () async {
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (context) => const ProfilePage(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(
+                      CupertinoIcons.person_circle,
+                      size: 40,
+                      color: Color(0xff574ae2),
+                    ),
+                  ),
+                ],
                 elevation: 0,
                 stretchTriggerOffset: 210,
                 toolbarHeight: 70,
@@ -164,7 +187,7 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
+        onPressed: () async {
           Navigator.push(
             context,
             CupertinoPageRoute(
@@ -175,6 +198,37 @@ class _HomePageState extends State<HomePage> {
           ).then((value) {
             setState(() {});
           });
+          // final token = await FirebaseAuth.instance.currentUser!.getIdToken();
+          // final response = await http.get(
+          //   Uri.parse('http://localhost:3000/services/connected'),
+          //   headers: {
+          //     "Authorization": 'Bearer $token',
+          //   },
+          // );
+          // final data = jsonDecode(response.body);
+          // WebViewController controller = WebViewController()
+          //   ..loadRequest(Uri.parse(data[0]['url']));
+          // showModalBottomSheet(
+          //   isScrollControlled: true,
+          //   context: context,
+          //   builder: (context) {
+          //     return ClipRRect(
+          //       borderRadius: BorderRadius.circular(20),
+          //       child: SizedBox(
+          //         height: dh(context) / 1.1,
+          //         child: Column(
+          //           children: [
+          //             SizedBox(
+          //               height: dh(context) / 1.1,
+          //               width: dw(context),
+          //               child: WebViewWidget(controller: controller),
+          //             )
+          //           ],
+          //         ),
+          //       ),
+          //     );
+          //   },
+          // );
         },
         backgroundColor: const Color(0xfff2545b),
         child: const Icon(Icons.add, color: Colors.white),
