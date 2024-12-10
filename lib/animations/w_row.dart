@@ -57,13 +57,14 @@ class MarqueeRowState extends State<MarqueeRow>
     const textWidth = 100.0;
 
     final itemsCount = (screenWidth / textWidth).ceil() + 2;
-//  + widget.rowOffset
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
         return Transform.translate(
           offset: Offset(
-            -_controller.value * textWidth * itemsCount,
+            ((-_controller.value * textWidth) - 60) * itemsCount +
+                widget.rowOffset,
             50,
           ),
           child: child,

@@ -249,52 +249,11 @@ class _SignupState extends State<SignupPage> {
 
   void _submitForm() {
     if (_emailController.text.length > 30) {
-      // Utility.customSnackBar(
-      //     _scaffoldKey, 'Username length cannot exceed 50 character', context);
       return;
     }
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      // Utility.customSnackBar(
-      //     _scaffoldKey, 'Please fill form carefully', context);
       return;
     }
-
-    // var state = Provider.of<AuthState>(context, listen: false);
-
-    // UserModel user = UserModel(
-    //   email: _emailController.text.toLowerCase(),
-    //   displayName: widget.name,
-    //   userName: "@" + "${widget.name}" + "${Random().nextInt(1000)}",
-    //   bio: widget.bio,
-    //   profilePic:
-    //       "https://static.vecteezy.com/system/resources/previews/005/544/718/original/profile-icon-design-free-vector.jpg",
-    //   link: widget.link,
-    // );
-    // state.updateUserProfile(
-    //   user,
-    //   image: widget.image,
-    // );
-    // state
-    //     .signUp(
-    //   user,
-    //   context,
-    //   password: _passwordController.text,
-    //   scaffoldKey: _scaffoldKey,
-    // )
-    //     .then((status) {
-    //   print(status);
-    // }).whenComplete(
-    //   () {
-    //     Future.delayed(const Duration(seconds: 0)).then((_) {
-    //       var state = Provider.of<AuthState>(context, listen: false);
-    //       state.getCurrentUser();
-    //       Navigator.push(
-    //         context,
-    //         MaterialPageRoute(builder: ((context) => PrivacyPage())),
-    //       );
-    //     });
-    //   },
-    // );
   }
 
   @override
