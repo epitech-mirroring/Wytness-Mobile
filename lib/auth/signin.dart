@@ -2,19 +2,18 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:mobile/animations/w_row.dart';
 
 import 'package:mobile/constants/const.dart';
 
-class EmailPage extends StatefulWidget {
-  final String? name;
-
-  const EmailPage({super.key, this.name});
+class SignInPage extends StatefulWidget {
+  const SignInPage({super.key});
   @override
   State<StatefulWidget> createState() => _SignupState();
 }
 
-class _SignupState extends State<EmailPage> {
+class _SignupState extends State<SignInPage> {
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -305,13 +304,28 @@ class _SignupState extends State<EmailPage> {
       key: _scaffoldKey,
       appBar: AppBar(
         elevation: 0,
-        title: const Text(
-          'Wytness',
-          style: TextStyle(
-            color: Color(0xff574ae2),
-            fontSize: 30,
-            fontWeight: FontWeight.bold,
-          ),
+        centerTitle: true,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              'assets/logo.svg',
+              color: const Color(0xff574ae2),
+              width: 40,
+            ),
+            sw(10),
+            const Text(
+              'Wytness',
+              style: TextStyle(
+                fontFamily: 'Parkinsans',
+                letterSpacing: -0.8,
+                color: Color(0xff574ae2),
+                fontSize: 30,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            sw(70),
+          ],
         ),
       ),
       body: _body(context),
