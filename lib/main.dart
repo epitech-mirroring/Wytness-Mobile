@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/constants/const.dart';
 import 'package:mobile/onboarding/onboard.dart';
 import 'package:mobile/pages/home.dart';
-import 'package:mobile/service/workflows.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  localUser = await SharedPreferences.getInstance();
   runApp(const MyApp());
 }
 
@@ -32,9 +35,10 @@ class EntryPointPage extends StatefulWidget {
 }
 
 class _EntryPointPageState extends State<EntryPointPage> {
-  WorkflowService workflowService = WorkflowService();
   Widget pageEntrypointPage() {
-    return OnBoardPage();
+    if (localUser.getString('token') == null) {
+      return const OnBoardPage();
+    }
     return HomePage(
       workflow: workflowService,
     );
