@@ -13,7 +13,7 @@ class AnimatedScreen extends StatelessWidget {
     return Scaffold(
       body: Column(
         children: List.generate(
-          rowCount,
+          rowCount + 1,
           (index) => Expanded(
             child: MarqueeRow(rowOffset: index * 30.0),
           ),
@@ -41,7 +41,7 @@ class MarqueeRowState extends State<MarqueeRow>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 5),
+      duration: const Duration(seconds: 10),
     )..repeat();
   }
 
@@ -57,14 +57,14 @@ class MarqueeRowState extends State<MarqueeRow>
     const textWidth = 100.0;
 
     final itemsCount = (screenWidth / textWidth).ceil() + 2;
-
+//  + widget.rowOffset
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
         return Transform.translate(
           offset: Offset(
             -_controller.value * textWidth * itemsCount,
-            -50,
+            50,
           ),
           child: child,
         );
@@ -72,8 +72,8 @@ class MarqueeRowState extends State<MarqueeRow>
       child: Row(
         children: [
           for (int i = 0; i < itemsCount; i++)
-            Row(
-              children: List.generate(
+            Row(children: [
+              ...List.generate(
                 itemsCount,
                 (index) {
                   final animationValue = ((_controller.value +
@@ -99,7 +99,7 @@ class MarqueeRowState extends State<MarqueeRow>
                   );
                 },
               ),
-            )
+            ])
         ],
       ),
     );
