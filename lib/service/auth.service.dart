@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile/constants/const.dart';
 
@@ -15,6 +16,7 @@ class AuthService {
       );
       final data = jsonDecode(response.body);
       if (response.statusCode == 201) {
+        FirebaseAuth.instance.signInWithCustomToken(data['token']);
         localUser.setString('token', data['token']);
         return 'token';
       } else {
@@ -45,6 +47,7 @@ class AuthService {
       Map<String, dynamic> data = jsonDecode(response.body);
       if (response.statusCode == 201) {
         if (data.containsKey('token')) {
+          FirebaseAuth.instance.signInWithCustomToken(data['token']);
           localUser.setString('token', data['token']);
           return 'token';
         } else {
