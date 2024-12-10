@@ -6,6 +6,7 @@ import 'package:animate_do/animate_do.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/auth/signin.dart';
+import 'package:mobile/auth/signup.dart';
 import 'package:mobile/constants/const.dart';
 
 class OnBoardPage extends StatefulWidget {
@@ -100,7 +101,14 @@ class _OnBoardState extends State<OnBoardPage> {
                   ),
                 ),
               ),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  CupertinoPageRoute(
+                    builder: (context) => const SignupPage(),
+                  ),
+                );
+              },
             ),
             Padding(
               padding: const EdgeInsets.only(top: 20),
@@ -131,7 +139,7 @@ class _OnBoardState extends State<OnBoardPage> {
                               Navigator.push(
                                 context,
                                 CupertinoPageRoute(
-                                  builder: (context) => const EmailPage(),
+                                  builder: (context) => const SignInPage(),
                                 ),
                               );
                             },
