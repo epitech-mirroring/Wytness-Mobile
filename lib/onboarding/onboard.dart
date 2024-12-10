@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:animate_do/animate_do.dart';
@@ -36,15 +37,18 @@ class _OnBoardState extends State<OnBoardPage> {
   List<Map<String, dynamic>> onboardList(BuildContext context) {
     return [
       {
-        'image': 'gradient.png',
+        'image':
+            'https://em-content.zobj.net/source/microsoft-teams/363/crystal-ball_1f52e.png',
         'description': 'Automate easily tasks',
       },
       {
-        'image': 'gradient.png',
+        'image':
+            'https://em-content.zobj.net/source/microsoft-teams/363/twelve-oclock_1f55b.png',
         'description': 'Create personnalized scenarios.',
       },
       {
-        'image': 'gradient.png',
+        'image':
+            'https://em-content.zobj.net/source/microsoft-teams/363/detective_light-skin-tone_1f575-1f3fb_1f3fb.png',
         'description': 'Gain time everydays.',
       },
     ];
@@ -80,6 +84,7 @@ class _OnBoardState extends State<OnBoardPage> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(50),
+                      border: Border.all(width: 1, color: Colors.black),
                     ),
                     child: const Center(
                       child: Text(
@@ -167,33 +172,34 @@ class _OnBoardState extends State<OnBoardPage> {
               return Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(
-                    height: dh(context) / 2.5,
-                    width: dw(context) / 1.2,
+                  Padding(
+                    padding: const EdgeInsets.all(10),
                     child: FadeIn(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: Image.asset(
-                          "assets/onboard/${model["image"]}",
-                          fit: BoxFit.cover,
-                        ),
+                      child: CachedNetworkImage(
+                        imageUrl: model["image"],
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
                   sh(50),
                   realIndex == 2
                       ? connection()
-                      : Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(
-                            model['description'],
-                            style: const TextStyle(
-                              fontFamily: 'arial',
-                              color: Colors.black,
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
+                      : FadeInDown(
+                          child: FadeInLeft(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 10),
+                              child: Text(
+                                model['description'],
+                                style: const TextStyle(
+                                  fontFamily: 'arial',
+                                  color: Colors.black,
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
                             ),
-                            textAlign: TextAlign.center,
                           ),
                         ),
                   sh(30),
