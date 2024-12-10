@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 
 class AnimatedScreen extends StatelessWidget {
   const AnimatedScreen({super.key});
@@ -87,11 +88,11 @@ class MarqueeRowState extends State<MarqueeRow>
                     child: AnimatedOpacity(
                       duration: const Duration(milliseconds: 500),
                       opacity: opacity == 0 ? 1 : opacity,
-                      child: const Text(
-                        'W',
-                        style: TextStyle(
-                          fontSize: 70,
-                          color: Color(0xff574ae2),
+                      child: Transform.scale(
+                        scaleX: -1,
+                        child: SvgPicture.asset(
+                          'assets/logo.svg',
+                          color: const Color(0xff574ae2),
                         ),
                       ),
                     ),
