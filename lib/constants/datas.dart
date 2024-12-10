@@ -13,6 +13,11 @@ List<ApiModel> apis = [
       'Get user favorite albums',
       'Get user favorite artists',
     ],
+    reactions: [
+      'Add song to playlist',
+      'Add album to playlist',
+      'Add artist to playlist',
+    ],
   ),
   ApiModel(
     name: 'Open AI',
@@ -23,6 +28,11 @@ List<ApiModel> apis = [
       'Generate text',
       'Generate image',
       'Generate code',
+    ],
+    reactions: [
+      'Save text',
+      'Save image',
+      'Save code',
     ],
   ),
   ApiModel(
@@ -37,6 +47,11 @@ List<ApiModel> apis = [
       'Get user favorite albums',
       'Get user favorite artists',
     ],
+    reactions: [
+      'Add song to playlist',
+      'Add album to playlist',
+      'Add artist to playlist',
+    ],
   ),
   ApiModel(
     name: 'SMTP',
@@ -47,6 +62,9 @@ List<ApiModel> apis = [
     actions: [
       'Send email',
       'Get email',
+    ],
+    reactions: [
+      'Receive email',
     ],
   ),
   ApiModel(
@@ -60,6 +78,9 @@ List<ApiModel> apis = [
       'Get user channels',
       'Get user messages',
     ],
+    reactions: [
+      'Send message',
+    ],
   ),
   ApiModel(
     name: 'HomeAssistant',
@@ -71,6 +92,10 @@ List<ApiModel> apis = [
       'Get user devices',
       'Get user sensors',
       'Get user automations',
+    ],
+    reactions: [
+      'Turn on device',
+      'Turn off device',
     ],
   ),
   ApiModel(
@@ -84,128 +109,167 @@ List<ApiModel> apis = [
       'Get user sensors',
       'Get user automations',
     ],
-  ),
-  ApiModel(
-    name: 'Naolib',
-    imageUrl:
-        'https://entreprises.nantesmetropole.fr/wp-content/uploads/2023/08/23/naolib-logo-2-1600-1024x538-1.png',
-    description: 'Naolib is a library for the Nantes area.',
-    actions: [
-      'When does the tram arrive?',
-      'When does the bus arrive?',
-      'When does the bus leave?',
+    reactions: [
+      'Turn on device',
+      'Turn off device',
     ],
   ),
   ApiModel(
-    name: 'Weather Channel',
-    imageUrl:
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/The_Weather_Channel_logo_2005-present.svg/1200px-The_Weather_Channel_logo_2005-present.svg.png',
-    description: 'The Weather Channel is an American pay television channel.',
-    actions: [
-      'Get weather',
-      'Get temperature',
-      'Get humidity',
-    ],
-  ),
+      name: 'Naolib',
+      imageUrl:
+          'https://entreprises.nantesmetropole.fr/wp-content/uploads/2023/08/23/naolib-logo-2-1600-1024x538-1.png',
+      description: 'Naolib is a library for the Nantes area.',
+      actions: [
+        'When does the tram arrive?',
+        'When does the bus arrive?',
+        'When does the bus leave?',
+      ],
+      reactions: [
+        'Notify me when the tram arrives',
+        'Notify me when the bus arrives',
+        'Notify me when the bus leaves',
+      ]),
   ApiModel(
-    name: 'IZLY',
-    imageUrl:
-        'https://play-lh.googleusercontent.com/GptA8ngrMmbfDRg_OZvHCoMfLeRZffuzv1zu1yZg9BEeTXAihz2NZTJX368v7zH0ACM',
-    description: 'IZLY is a French electronic payment system.',
-    actions: [
-      'Get user balance',
-      'Get user transactions',
-    ],
-  ),
+      name: 'Weather Channel',
+      imageUrl:
+          'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/The_Weather_Channel_logo_2005-present.svg/1200px-The_Weather_Channel_logo_2005-present.svg.png',
+      description: 'The Weather Channel is an American pay television channel.',
+      actions: [
+        'Get weather',
+        'Get temperature',
+        'Get humidity',
+      ],
+      reactions: [
+        'Notify me when it rains',
+        'Notify me when it snows',
+        'Notify me when it is sunny',
+      ]),
   ApiModel(
-    name: 'Revolut',
-    imageUrl:
-        'https://play-lh.googleusercontent.com/9Agn2TZHIyOR4GGB4LcOU4VXwE2OcK47qwGY8XPZXz4u55ehNfpGuEBeNq_cbvH0z5A',
-    description:
-        'Revolut is a British financial technology company that offers banking services.',
-    actions: [
-      'Get user balance',
-      'Get user transactions',
-    ],
-  ),
+      name: 'IZLY',
+      imageUrl:
+          'https://play-lh.googleusercontent.com/GptA8ngrMmbfDRg_OZvHCoMfLeRZffuzv1zu1yZg9BEeTXAihz2NZTJX368v7zH0ACM',
+      description: 'IZLY is a French electronic payment system.',
+      actions: [
+        'Get user balance',
+        'Get user transactions',
+      ],
+      reactions: [
+        'Notify me when my balance is low',
+      ]),
   ApiModel(
-    name: 'GitHub',
-    imageUrl: 'https://download.logo.wine/logo/GitHub/GitHub-Logo.wine.png',
-    description:
-        'GitHub is a provider of Internet hosting for software development and version control using Git.',
-    actions: [
-      'Get user repositories',
-      'Get user commits',
-      'Get user issues',
-    ],
-  ),
+      name: 'Revolut',
+      imageUrl:
+          'https://play-lh.googleusercontent.com/9Agn2TZHIyOR4GGB4LcOU4VXwE2OcK47qwGY8XPZXz4u55ehNfpGuEBeNq_cbvH0z5A',
+      description:
+          'Revolut is a British financial technology company that offers banking services.',
+      actions: [
+        'Get user balance',
+        'Get user transactions',
+      ],
+      reactions: [
+        'Notify me when my balance is low',
+      ]),
   ApiModel(
-    name: 'Airtable',
-    imageUrl:
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQelaD7G6XIdlUTV3uvwT9hwmb1_ZFyhzqKjA&s',
-    description:
-        'Airtable is a cloud collaboration service headquartered in San Francisco.',
-    actions: [
-      'Get user tables',
-      'Get user records',
-    ],
-  ),
+      name: 'GitHub',
+      imageUrl: 'https://download.logo.wine/logo/GitHub/GitHub-Logo.wine.png',
+      description:
+          'GitHub is a provider of Internet hosting for software development and version control using Git.',
+      actions: [
+        'Get user repositories',
+        'Get user commits',
+        'Get user issues',
+      ],
+      reactions: [
+        'Create repository',
+        'Create commit',
+        'Create issue',
+      ]),
   ApiModel(
-    name: 'Shazam',
-    imageUrl:
-        'https://play-lh.googleusercontent.com/5lava_0Xhym4yLvQFQ3kaI3-4RnB8teXHmgr0Y61HMUJzoXEQQd3EXnVg4DtOT3Bezyp',
-    description:
-        'Shazam is a commercial mobile phone-based music identification service.',
-    actions: [
-      'Get user favorite songs',
-      'Get user favorite artists',
-    ],
-  ),
+      name: 'Airtable',
+      imageUrl:
+          'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQelaD7G6XIdlUTV3uvwT9hwmb1_ZFyhzqKjA&s',
+      description:
+          'Airtable is a cloud collaboration service headquartered in San Francisco.',
+      actions: [
+        'Get user tables',
+        'Get user records',
+      ],
+      reactions: [
+        'Create table',
+        'Create record',
+      ]),
   ApiModel(
-    name: 'Notion',
-    imageUrl:
-        'https://cdn.jaimelesstartups.fr/wp-content/uploads/2022/02/illustration%20à%20propos%20de%20la%20startup%20Notion%20est%20disponible%20en%20Français.png',
-    description:
-        'Notion is an application that provides components such as databases, kanban boards, wikis, calendars, and reminders.',
-    actions: [
-      'Get user databases',
-      'Get user boards',
-      'Get user wikis',
-      'Get user calendars',
-      'Get user reminders',
-    ],
-  ),
+      name: 'Shazam',
+      imageUrl:
+          'https://play-lh.googleusercontent.com/5lava_0Xhym4yLvQFQ3kaI3-4RnB8teXHmgr0Y61HMUJzoXEQQd3EXnVg4DtOT3Bezyp',
+      description:
+          'Shazam is a commercial mobile phone-based music identification service.',
+      actions: [
+        'Get user favorite songs',
+        'Get user favorite artists',
+      ],
+      reactions: [
+        'Notify me when my favorite artist releases a new song',
+      ]),
   ApiModel(
-    name: 'Slack',
-    imageUrl:
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Slack_icon_2019.svg/1024px-Slack_icon_2019.svg.png',
-    description: 'Slack is a proprietary business communication platform.',
-    actions: [
-      'Get user channels',
-      'Get user messages',
-    ],
-  ),
+      name: 'Notion',
+      imageUrl:
+          'https://cdn.jaimelesstartups.fr/wp-content/uploads/2022/02/illustration%20à%20propos%20de%20la%20startup%20Notion%20est%20disponible%20en%20Français.png',
+      description:
+          'Notion is an application that provides components such as databases, kanban boards, wikis, calendars, and reminders.',
+      actions: [
+        'Get user databases',
+        'Get user boards',
+        'Get user wikis',
+        'Get user calendars',
+        'Get user reminders',
+      ],
+      reactions: [
+        'Create database',
+        'Create board',
+        'Create wiki',
+        'Create calendar',
+        'Create reminder',
+      ]),
   ApiModel(
-    name: 'Trello',
-    imageUrl:
-        'https://img.utdstc.com/icon/b34/f31/b34f31986c7b0aabeb11e54b2e6985c6958d4e0f64a01ab10eafc8ede2a517ff:200',
-    description: 'Trello is a web-based list-making application.',
-    actions: [
-      'Get user boards',
-      'Get user lists',
-      'Get user cards',
-    ],
-  ),
+      name: 'Slack',
+      imageUrl:
+          'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Slack_icon_2019.svg/1024px-Slack_icon_2019.svg.png',
+      description: 'Slack is a proprietary business communication platform.',
+      actions: [
+        'Get user channels',
+        'Get user messages',
+      ],
+      reactions: [
+        'Send message',
+      ]),
   ApiModel(
-    name: 'Google trad',
-    imageUrl:
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Google_Translate_logo.svg/1200px-Google_Translate_logo.svg.png',
-    description:
-        'Google Translate is a multilingual neural machine translation service.',
-    actions: [
-      'Translate text',
-    ],
-  ),
+      name: 'Trello',
+      imageUrl:
+          'https://img.utdstc.com/icon/b34/f31/b34f31986c7b0aabeb11e54b2e6985c6958d4e0f64a01ab10eafc8ede2a517ff:200',
+      description: 'Trello is a web-based list-making application.',
+      actions: [
+        'Get user boards',
+        'Get user lists',
+        'Get user cards',
+      ],
+      reactions: [
+        'Create board',
+        'Create list',
+        'Create card',
+      ]),
+  ApiModel(
+      name: 'Google trad',
+      imageUrl:
+          'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Google_Translate_logo.svg/1200px-Google_Translate_logo.svg.png',
+      description:
+          'Google Translate is a multilingual neural machine translation service.',
+      actions: [
+        'Translate text',
+      ],
+      reactions: [
+        'Notify me when a new language is available',
+      ]),
   ApiModel(
     name: 'Bluesky',
     imageUrl:
@@ -215,6 +279,10 @@ List<ApiModel> apis = [
       'Get user posts',
       'Get user followers',
       'Get user following',
+    ],
+    reactions: [
+      'Create post',
+      'Follow user',
     ],
   ),
 ];
