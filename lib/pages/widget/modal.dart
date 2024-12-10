@@ -108,6 +108,7 @@ class _ModalSheetWidgetState extends State<ModalSheetWidget> {
                                       imageUrl: api.imageUrl,
                                       description: api.description,
                                       actions: [action],
+                                      reactions: [],
                                     ),
                                   );
                                 },
@@ -126,7 +127,69 @@ class _ModalSheetWidgetState extends State<ModalSheetWidget> {
                       },
                     ),
                   ),
-                  sh(10)
+                  sh(10),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        const Icon(CupertinoIcons.arrow_2_squarepath),
+                        sw(5),
+                        const Text(
+                          'Reaction',
+                          style: TextStyle(
+                            fontFamily: 'Arial',
+                            fontSize: 15,
+                            decoration: TextDecoration.underline,
+                          ),
+                        )
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 40,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: api.reactions.length,
+                      itemBuilder: (BuildContext context, int index) {
+                        final reaction = api.reactions[index];
+                        return Row(
+                          children: [
+                            sw(10),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(width: 1),
+                              ),
+                              child: TextButton(
+                                onPressed: () {
+                                  Navigator.pop(
+                                    context,
+                                    ApiModel(
+                                      name: api.name,
+                                      imageUrl: api.imageUrl,
+                                      description: api.description,
+                                      actions: [],
+                                      reactions: [reaction],
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  reaction,
+                                  style: const TextStyle(
+                                    fontFamily: 'Arial',
+                                    fontSize: 15,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                  sh(10),
                 ],
               );
             },
