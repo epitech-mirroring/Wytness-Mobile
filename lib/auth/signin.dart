@@ -6,6 +6,8 @@ import 'package:flutter_svg/svg.dart';
 import 'package:mobile/animations/w_row.dart';
 
 import 'package:mobile/constants/const.dart';
+import 'package:mobile/pages/home.dart';
+import 'package:mobile/service/auth.service.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -247,12 +249,48 @@ class _SignupState extends State<SignInPage> {
     );
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_emailController.text.length > 30) {
       return;
     }
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       return;
+    }
+    final data = await AuthService.login(
+      _emailController.text,
+      _passwordController.text,
+    );
+    if (data == 'token') {
+      Navigator.pushAndRemoveUntil(
+        context,
+        CupertinoPageRoute<Widget>(
+          builder: (BuildContext context) => HomePage(
+            workflow: workflowService,
+          ),
+        ),
+        (Route route) => true,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(40),
+              topRight: Radius.circular(40),
+            ),
+          ),
+          backgroundColor: const Color(0xff574ae2),
+          content: Text(
+            data,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
     }
   }
 
