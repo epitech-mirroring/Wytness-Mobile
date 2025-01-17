@@ -48,6 +48,9 @@ dependencies:
   firebase_auth: ^5.3.4
   firebase_core: ^3.8.1
   webview_flutter: ^4.10.0
+  palette_generator: ^0.3.3+5
+  fl_chart: ^0.70.1
+  app_links: ^6.3.3
 
 dev_dependencies:
   flutter_test:
