@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:mobile/animations/w_row.dart';
 
 import 'package:mobile/constants/const.dart';
 import 'package:mobile/pages/home.dart';
@@ -41,13 +40,6 @@ class _SignupState extends State<SignupPage> {
   Widget _body(BuildContext context) {
     return Stack(
       children: [
-        Transform.scale(
-          scaleX: -1,
-          child: Transform.rotate(
-            angle: 0.2,
-            child: const AnimatedScreen(),
-          ),
-        ),
         Padding(
           padding: const EdgeInsets.only(top: 30),
           child: Center(
@@ -330,7 +322,10 @@ class _SignupState extends State<SignupPage> {
           children: [
             SvgPicture.asset(
               'assets/logo.svg',
-              color: const Color(0xff574ae2),
+              colorFilter: const ColorFilter.mode(
+                Color(0xff574ae2),
+                BlendMode.srcIn,
+              ),
               width: 40,
             ),
             sw(10),
