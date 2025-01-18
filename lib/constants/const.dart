@@ -2,6 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/service/workflows.service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mobile/model/apis.module.dart';
+
+List<ApiModel> apis = [];
 
 double dh(BuildContext context) {
   return MediaQuery.of(context).size.height;
