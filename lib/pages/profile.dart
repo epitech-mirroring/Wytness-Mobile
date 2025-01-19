@@ -20,6 +20,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void logout() async {
+    apis.clear();
     FirebaseAuth.instance.signOut();
     localUser.remove('token');
     Navigator.pushReplacement(
@@ -41,11 +42,7 @@ class _ProfilePageState extends State<ProfilePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Text('Email: ${user.email}'),
-          sh(40),
-          const Text(
-            'Danger Zone 🚨',
-            style: TextStyle(color: Colors.red),
-          ),
+          sh(20),
           CupertinoButton(
             color: const Color(0xff574ae2),
             onPressed: logout,
