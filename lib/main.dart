@@ -83,7 +83,7 @@ class _EntryPointPageState extends State<EntryPointPage> {
         }));
         try {
           final data = await http.post(
-            Uri.parse('http://localhost:4040/api/services/$service/connect'),
+            Uri.parse('$url/api/services/$service/connect'),
             headers: {
               'Authorization':
                   'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}',

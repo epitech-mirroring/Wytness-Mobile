@@ -5,7 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-
+import 'package:http/http.dart' as http;
 import 'package:mobile/constants/const.dart';
 import 'package:mobile/pages/home.dart';
 import 'package:mobile/service/auth.service.dart';
@@ -122,7 +122,8 @@ class _SignupState extends State<SignupPage> {
                                 GestureDetector(
                                   onTap: () async {
                                     try {
-                                      final GoogleSignIn googleSignIn =  GoogleSignIn();
+                                      final GoogleSignIn googleSignIn =
+                                          GoogleSignIn();
                                       final GoogleSignInAccount? googleUser =
                                           await googleSignIn.signIn();
 
@@ -139,17 +140,22 @@ class _SignupState extends State<SignupPage> {
                                         accessToken: googleAuth.accessToken,
                                         idToken: googleAuth.idToken,
                                       );
-                                      googleUser.email;
-                                      // final UserCredential userCredential =
-                                      //     await _auth
-                                      //         .signInWithCredential(credential);
-
-                                      // setState(() {
-                                      //   _user = userCredential.user;
-                                      // });
-
-                                      // print(
-                                      //     'Signed in as ${_user!.displayName}');
+                                      try {
+                                        await FirebaseAuth.instance
+                                            .signInWithCredential(credential);
+                                        final data = await http.post(
+                                          Uri.parse('$url/api/auth/sync'),
+                                          headers: {
+                                            'Authorization':
+                                                'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}',
+                                            'Content-Type': 'application/json',
+                                          },
+                                        );
+                                        print(data.statusCode);
+                                      } catch (error) {
+                                        print(
+                                            'Error during Google sign-in: $error');
+                                      }
                                     } catch (error) {
                                       print(
                                           'Error during Google sign-in: $error');

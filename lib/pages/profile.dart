@@ -12,15 +12,14 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  late User user;
+  late User? user;
   @override
   void initState() {
-    user = FirebaseAuth.instance.currentUser!;
+    user = FirebaseAuth.instance.currentUser;
     super.initState();
   }
 
   void logout() async {
-    apis.clear();
     FirebaseAuth.instance.signOut();
     localUser.remove('token');
     Navigator.pushReplacement(
@@ -29,6 +28,7 @@ class _ProfilePageState extends State<ProfilePage> {
         builder: (context) => const OnBoardPage(),
       ),
     );
+    apis.clear();
   }
 
   @override
@@ -41,7 +41,7 @@ class _ProfilePageState extends State<ProfilePage> {
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
-          Text('Email: ${user.email}'),
+          Text('Email: ${user?.email ?? ''}'),
           sh(20),
           CupertinoButton(
             color: const Color(0xff574ae2),

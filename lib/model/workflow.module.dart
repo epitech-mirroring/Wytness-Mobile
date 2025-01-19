@@ -28,7 +28,8 @@ class WorkflowModel {
       description: json['description'],
       ownerId: json['ownerId'],
       executions: json.containsKey('executions') ? json['executions'] : 0,
-      dataUsedDownLoad: json.containsKey('dataUsedDownLoad') ? json['dataUsedDownLoad'] : 0,
+      dataUsedDownLoad:
+          json.containsKey('dataUsedDownLoad') ? json['dataUsedDownLoad'] : 0,
       nodes: json.containsKey('nodes')
           ? (json['nodes'] as List)
               .map((node) => NodeModel.fromJson(node))

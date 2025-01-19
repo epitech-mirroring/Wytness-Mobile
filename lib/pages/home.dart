@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:graphview/GraphView.dart';
 import 'package:mobile/constants/const.dart';
 import 'package:mobile/model/apis.module.dart';
 import 'package:mobile/model/node.module.dart';
@@ -44,19 +45,28 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   List<WorkflowModel> workflows = [];
-
+  bool loading = false;
   @override
   void initState() {
-    AuthService.services().then((value) {
-      setState(() {});
-      fetchDashBoard().then((value) {
-        setState(() {
-          data = value;
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user == null) {
+        loading = true;
+      } else {
+        AuthService.services().then((value) {
+          setState(() {});
+          fetchDashBoard().then((value) {
+            setState(() {
+              data = value;
+            });
+          });
+          fetchWorkflows();
+          setState(() {
+            loading = false;
+          });
         });
-      });
-      fetchWorkflows();
-      setState(() {});
+      }
     });
+
     tabController = TabController(length: 3, vsync: this);
     tabController.index = 1;
     super.initState();
@@ -66,7 +76,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     try {
       final response = await http.get(
         Uri.parse(
-            'http://localhost:4040/api/workflows?sort=statistics.duration.start&order=ASC'),
+            '$url/api/workflows?sort=statistics.duration.start&order=ASC'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization':
@@ -76,8 +86,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       if (response.statusCode == 200) {
         for (var workflow in (jsonDecode(response.body) as List)) {
           final stats = await http.get(
-            Uri.parse(
-                'http://localhost:4040/api/statistics/workflows/${workflow['id']}'),
+            Uri.parse('$url/api/statistics/workflows/${workflow['id']}'),
             headers: {
               'Content-Type': 'application',
               'Authorization':
@@ -127,7 +136,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void getNodes(int id) async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:4040/api/workflows/$id/nodes'),
+        Uri.parse('$url/api/workflows/$id/nodes'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization':
@@ -150,6 +159,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               auth: {},
             );
           });
+          NodeModel? serviceNode;
           String apiName = '';
           Color color = Colors.black;
           for (var api in apis) {
@@ -157,12 +167,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               if (action.id == node['nodeId']) {
                 apiName = action.name;
                 color = api.color ?? Colors.black;
+                serviceNode = action;
+                break;
               }
             }
             for (var reaction in api.reactions) {
               if (reaction.id == node['nodeId']) {
                 apiName = reaction.name;
                 color = api.color ?? Colors.black;
+                serviceNode = reaction;
+                break;
               }
             }
           }
@@ -172,6 +186,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             'description': data.description,
             'imageUrl': data.imageUrl,
             'color': color,
+            'fields': serviceNode!.fields,
+            'config': serviceNode.config,
             'type': data.reactions.map((e) => e.id).contains(node['nodeId'])
                 ? 'trigger'
                 : 'action',
@@ -191,7 +207,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Future<Map<String, dynamic>> fetchDashBoard() async {
     try {
       final response = await http.get(
-        Uri.parse('http://127.0.0.1:4040/api/statistics/users/me'),
+        Uri.parse('$url/api/statistics/users/me'),
         headers: {
           'Authorization':
               'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}',
@@ -208,6 +224,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
     return Scaffold(
       body: TabBarView(
         controller: tabController,
@@ -509,18 +532,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             ],
                           ),
                           child: Builder(builder: (context) {
-                            late double palier;
-                            if (data['dataUsedDownLoad'] < 10) {
-                              palier = 10;
-                            } else if (data['dataUsedDownLoad'] < 50) {
-                              palier = 50;
-                            } else if (data['dataUsedDownLoad'] < 100) {
-                              palier = 100;
-                            } else if (data['dataUsedDownLoad'] < 5000) {
-                              palier = 5000;
+                            double palier = 0;
+                            double percentage = 0;
+                            if (data.containsKey('dataUsedDownLoad')) {
+                              percentage =
+                                  ((data['dataUsedDownLoad'] / 5000) * 100);
+                              if (data['dataUsedDownLoad'] < 10) {
+                                palier = 10;
+                              } else if (data['dataUsedDownLoad'] < 50) {
+                                palier = 50;
+                              } else if (data['dataUsedDownLoad'] < 100) {
+                                palier = 100;
+                              } else if (data['dataUsedDownLoad'] < 5000) {
+                                palier = 5000;
+                              }
                             }
-                            double percentage =
-                                ((data['dataUsedDownLoad'] / palier) * 100);
                             return Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -603,17 +629,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             ],
                           ),
                           child: Builder(builder: (context) {
-                            double percentage =
-                                ((data['dataUsedDownLoad'] / 5000) * 100);
-                            late double palier;
-                            if (data['dataUsedDownLoad'] < 10) {
-                              palier = 10;
-                            } else if (data['dataUsedDownLoad'] < 50) {
-                              palier = 50;
-                            } else if (data['dataUsedDownLoad'] < 100) {
-                              palier = 100;
-                            } else if (data['dataUsedDownLoad'] < 5000) {
-                              palier = 5000;
+                            double palier = 0;
+                            double percentage = 0;
+                            if (data.containsKey('dataUsedDownLoad')) {
+                              percentage =
+                                  ((data['dataUsedDownLoad'] / 5000) * 100);
+                              if (data['dataUsedDownLoad'] < 10) {
+                                palier = 10;
+                              } else if (data['dataUsedDownLoad'] < 50) {
+                                palier = 50;
+                              } else if (data['dataUsedDownLoad'] < 100) {
+                                palier = 100;
+                              } else if (data['dataUsedDownLoad'] < 5000) {
+                                palier = 5000;
+                              }
                             }
                             return Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -909,7 +938,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                                     'enabled') {
                                                   await http.patch(
                                                     Uri.parse(
-                                                        'http://localhost:4040/api/workflows/${workflows[index].id}'),
+                                                        '$url/api/workflows/${workflows[index].id}'),
                                                     headers: {
                                                       'Content-Type':
                                                           'application/json',
@@ -928,7 +957,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                                 } else {
                                                   await http.patch(
                                                     Uri.parse(
-                                                        'http://localhost:4040/api/workflows/${workflows[index].id}'),
+                                                        '$url/api/workflows/${workflows[index].id}'),
                                                     headers: {
                                                       'Content-Type':
                                                           'application/json',
@@ -1136,6 +1165,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       padding: const EdgeInsets.only(
                         left: 20,
                         right: 20,
+                        bottom: 10,
                       ),
                       child: Slidable(
                         key: ValueKey(workflows[index].name),
@@ -1147,7 +1177,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                 try {
                                   await http.delete(
                                     Uri.parse(
-                                      'http://localhost:4040/api/workflows/${workflows[index].id}',
+                                      '$url/api/workflows/${workflows[index].id}',
                                     ),
                                     headers: {
                                       'Content-Type': 'application/json',
@@ -1324,7 +1354,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                             'enabled') {
                                           await http.patch(
                                             Uri.parse(
-                                                'http://localhost:4040/api/workflows/${workflows[index].id}'),
+                                                '$url/api/workflows/${workflows[index].id}'),
                                             headers: {
                                               'Content-Type':
                                                   'application/json',
@@ -1341,7 +1371,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                         } else {
                                           await http.patch(
                                             Uri.parse(
-                                                'http://localhost:4040/api/workflows/${workflows[index].id}'),
+                                                '$url/api/workflows/${workflows[index].id}'),
                                             headers: {
                                               'Content-Type':
                                                   'application/json',
@@ -1423,17 +1453,123 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               padding: const EdgeInsets.only(bottom: 30),
               child: FloatingActionButton(
                 onPressed: () async {
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(
-                      builder: (context) {
-                        return const WorkflowPage(workflow: null);
-                      },
-                    ),
-                  ).then((value) {
-                    fetchWorkflows();
-                    setState(() {});
-                  });
+                  showCupertinoDialog(
+                    context: context,
+                    builder: (context) {
+                      final TextEditingController nameController =
+                          TextEditingController(text: '');
+                      final TextEditingController descriptionController =
+                          TextEditingController(text: '');
+
+                      return CupertinoAlertDialog(
+                        title: const Text('Download your workflow'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                                'Enter a name and description for your workflow:'),
+                            const SizedBox(height: 8),
+                            CupertinoTextField(
+                              controller: nameController,
+                              placeholder: 'Workflow Name',
+                            ),
+                            const SizedBox(height: 8),
+                            CupertinoTextField(
+                              controller: descriptionController,
+                              placeholder: 'Workflow Description',
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          CupertinoDialogAction(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: Color(0xff574ae2),
+                              ),
+                            ),
+                          ),
+                          CupertinoDialogAction(
+                            onPressed: () async {
+                              final workflowName = nameController.text.trim();
+                              final workflowDescription =
+                                  descriptionController.text.trim();
+
+                              if (workflowName.isNotEmpty &&
+                                  workflowDescription.isNotEmpty) {
+                                try {
+                                  await http.post(
+                                    Uri.parse('$url/api/workflows'),
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'Authorization':
+                                          'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                                    },
+                                    body: jsonEncode({
+                                      'name': workflowName,
+                                      'description': workflowDescription,
+                                      "mobile": true,
+                                    }),
+                                  );
+                                  Navigator.pop(context);
+                                  fetchWorkflows().then((value) {
+                                    Navigator.push(
+                                      context,
+                                      CupertinoPageRoute(
+                                        builder: (context) {
+                                          return WorkflowPage(
+                                            workflow: workflows.last,
+                                          );
+                                        },
+                                      ),
+                                    ).then((value) {
+                                      fetchWorkflows();
+                                      setState(() {});
+                                    });
+                                  });
+                                } catch (e) {
+                                  if (kDebugMode) {
+                                    print(e);
+                                  }
+                                }
+                              } else {
+                                showCupertinoDialog(
+                                  context: context,
+                                  builder: (context) => CupertinoAlertDialog(
+                                    title: const Text('Error'),
+                                    content: const Text(
+                                        'Workflow textfields cannot be empty.'),
+                                    actions: [
+                                      CupertinoDialogAction(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: const Text(
+                                          'OK',
+                                          style: TextStyle(
+                                            color: Color(0xff574ae2),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                            },
+                            child: const Text(
+                              'Save',
+                              style: TextStyle(
+                                color: Color(0xff574ae2),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
                 },
                 backgroundColor: const Color(0xff574ae2),
                 child: const Icon(Icons.add, color: Colors.white),

@@ -1,0 +1,35 @@
+{
+    "id": 18,
+    "nodeId": 1,
+    "name": "Direct Message Received Trigger",
+    "description": "Integrate Wytness with your discord servers",
+    "type": "trigger",
+    "labels": null,
+    "imageUrl": "http://localhost:4040/api/services/discord/logo.svg",
+    "color": 4283983346,
+    "apiName": null,
+    "next": [
+        {
+            "label": "output",
+            "next": [
+                {
+                    "id": 19,
+                    "nodeId": 2,
+                    "name": "Direct Message Send Action",
+                    "description": "Integrate Wytness with your discord servers",
+                    "type": "action",
+                    "labels": null,
+                    "imageUrl": "http://localhost:4040/api/services/discord/logo.svg",
+                    "color": 4283983346,
+                    "apiName": null,
+                    "next": [
+                        {
+                            "label": "output",
+                            "next": []
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

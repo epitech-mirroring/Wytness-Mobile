@@ -5,7 +5,8 @@ import 'package:mobile/constants/const.dart';
 import 'package:mobile/model/node.module.dart';
 
 class ModalSheetWidget extends StatefulWidget {
-  const ModalSheetWidget({super.key});
+  const ModalSheetWidget({super.key, required this.services});
+  final List<NodeModel> services;
 
   @override
   State<ModalSheetWidget> createState() => _ModalSheetWidgetState();
@@ -60,141 +61,145 @@ class _ModalSheetWidgetState extends State<ModalSheetWidget> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Text(api.description),
                   ),
-                  if (api.actions.isNotEmpty) sh(10),
-                  if (api.actions.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          const Icon(CupertinoIcons.arrow_2_squarepath),
-                          sw(5),
-                          const Text(
-                            'Actions',
-                            style: TextStyle(
-                              fontFamily: 'Arial',
-                              fontSize: 15,
-                              decoration: TextDecoration.underline,
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                  sh(10),
-                  SizedBox(
-                    height: api.actions.isEmpty ? 0 : 40,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: api.actions.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        final action = api.actions[index];
-                        return Row(
+                  if (widget.services.isNotEmpty) ...[
+                    if (api.actions.isNotEmpty) sh(10),
+                    if (api.actions.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
                           children: [
-                            sw(10),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(width: 1),
+                            const Icon(CupertinoIcons.arrow_2_squarepath),
+                            sw(5),
+                            const Text(
+                              'Actions',
+                              style: TextStyle(
+                                fontFamily: 'Arial',
+                                fontSize: 15,
+                                decoration: TextDecoration.underline,
                               ),
-                              child: TextButton(
-                                onPressed: () {
-                                  Navigator.pop(
-                                    context,
-                                    NodeModel(
-                                      name: action.name,
-                                      description: api.description,
-                                      id: action.id,
-                                      nodeId: action.nodeId,
-                                      imageUrl: api.imageUrl,
-                                      apiName: api.name,
-                                      type: action.type,
-                                      labels: action.labels,
-                                      color: api.color,
+                            )
+                          ],
+                        ),
+                      ),
+                    sh(10),
+                    SizedBox(
+                      height: api.actions.isEmpty ? 0 : 40,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: api.actions.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final action = api.actions[index];
+                          return Row(
+                            children: [
+                              sw(10),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(width: 1),
+                                ),
+                                child: TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(
+                                      context,
+                                      NodeModel(
+                                        name: action.name,
+                                        description: api.description,
+                                        id: action.id,
+                                        nodeId: action.nodeId,
+                                        imageUrl: api.imageUrl,
+                                        apiName: api.name,
+                                        type: action.type,
+                                        labels: action.labels,
+                                        color: api.color,
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    action.name,
+                                    style: const TextStyle(
+                                      fontFamily: 'Arial',
+                                      fontSize: 15,
+                                      color: Colors.black,
                                     ),
-                                  );
-                                },
-                                child: Text(
-                                  action.name,
-                                  style: const TextStyle(
-                                    fontFamily: 'Arial',
-                                    fontSize: 15,
-                                    color: Colors.black,
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                  if (api.reactions.isNotEmpty) sh(10),
-                  if (api.reactions.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Row(
-                        children: [
-                          const Icon(CupertinoIcons.arrow_2_squarepath),
-                          sw(5),
-                          const Text(
-                            'Reactions',
-                            style: TextStyle(
-                              fontFamily: 'Arial',
-                              fontSize: 15,
-                              decoration: TextDecoration.underline,
-                            ),
-                          )
-                        ],
+                            ],
+                          );
+                        },
                       ),
                     ),
-                  if (api.reactions.isNotEmpty) sh(10),
-                  SizedBox(
-                    height: api.reactions.isEmpty ? 0 : 40,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: api.reactions.length,
-                      itemBuilder: (BuildContext context, int index) {
-                        final reaction = api.reactions[index];
-                        return Row(
+                  ],
+                  if (widget.services.isEmpty) ...[
+                    if (api.reactions.isNotEmpty) sh(10),
+                    if (api.reactions.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
                           children: [
-                            sw(10),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(width: 1),
+                            const Icon(CupertinoIcons.arrow_2_squarepath),
+                            sw(5),
+                            const Text(
+                              'Reactions',
+                              style: TextStyle(
+                                fontFamily: 'Arial',
+                                fontSize: 15,
+                                decoration: TextDecoration.underline,
                               ),
-                              child: TextButton(
-                                onPressed: () {
-                                  Navigator.pop(
-                                    context,
-                                    NodeModel(
-                                      name: reaction.name,
-                                      description: api.description,
-                                      id: reaction.id,
-                                      imageUrl: api.imageUrl,
-                                      apiName: api.name,
-                                      type: reaction.type,
-                                      labels: reaction.labels,
-                                      color: api.color,
+                            )
+                          ],
+                        ),
+                      ),
+                    if (api.reactions.isNotEmpty) sh(10),
+                    SizedBox(
+                      height: api.reactions.isEmpty ? 0 : 40,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: api.reactions.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final reaction = api.reactions[index];
+                          return Row(
+                            children: [
+                              sw(10),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(width: 1),
+                                ),
+                                child: TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(
+                                      context,
+                                      NodeModel(
+                                        name: reaction.name,
+                                        description: api.description,
+                                        id: reaction.id,
+                                        imageUrl: api.imageUrl,
+                                        apiName: api.name,
+                                        type: reaction.type,
+                                        labels: reaction.labels,
+                                        color: api.color,
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    reaction.name,
+                                    style: const TextStyle(
+                                      fontFamily: 'Arial',
+                                      fontSize: 15,
+                                      color: Colors.black,
                                     ),
-                                  );
-                                },
-                                child: Text(
-                                  reaction.name,
-                                  style: const TextStyle(
-                                    fontFamily: 'Arial',
-                                    fontSize: 15,
-                                    color: Colors.black,
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                        );
-                      },
+                            ],
+                          );
+                        },
+                      ),
                     ),
-                  ),
+                  ],
                   sh(10),
                 ],
               );
