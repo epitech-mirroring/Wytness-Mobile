@@ -7,9 +7,9 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile/constants/const.dart';
 import 'package:mobile/model/apis.module.dart';
+import 'package:mobile/model/node.module.dart';
 
 class AuthService {
-  UserCredential? userCredential;
   static String url = Platform.isAndroid ? '10.0.2.2:4040' : 'wytness.fr';
   static Future<String> login(String email, String password) async {
     try {
@@ -88,7 +88,13 @@ class AuthService {
       );
       List<dynamic> data = jsonDecode(response.body);
       List<dynamic> auth = jsonDecode(connected.body);
+      for (var connect in auth) {
+        print(connect);
+      }
       for (var service in data) {
+        if (apis.map((e) => e.name).contains(service['name'])) {
+          continue;
+        }
         final connection = await http.get(
           Uri.parse(
             'http://127.0.0.1:4040/api/services/${service['name']}/nodes',
@@ -101,22 +107,23 @@ class AuthService {
         final connected = jsonDecode(connection.body);
         var nodes = connected as List<dynamic>;
 
-        List<Map<String, dynamic>> triggers = nodes
-            .cast<Map<String, dynamic>>()
+        List<NodeModel> triggers = nodes
             .where((e) => e['type'] == 'trigger')
+            .map((e) => NodeModel.fromJson(e))
             .toList();
 
-        List<Map<String, dynamic>> actions = nodes
+        List<NodeModel> actions = nodes
             .cast<Map<String, dynamic>>()
             .where((e) => e['type'] == 'action')
+            .map((e) => NodeModel.fromJson(e))
             .toList();
         apis.add(
           ApiModel(
             name: service['name'],
             imageUrl: service['logo'],
             description: service['description'],
-            actions: triggers,
-            reactions: actions,
+            actions: actions,
+            reactions: triggers,
             auth: auth.firstWhere(
               (element) => element['serviceId'] == service['name'],
               orElse: () => {},
