@@ -23,7 +23,6 @@ class ApiModel {
   });
 
   factory ApiModel.fromJson(Map<String, dynamic> json) {
-    print(json);
     return ApiModel(
       name: json['name'],
       imageUrl: json['imageUrl'],
