@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
 
@@ -5,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_shake_animated/flutter_shake_animated.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:mobile/constants/const.dart';
@@ -54,24 +56,28 @@ class _WorkflowPageState extends State<WorkflowPage>
   void goThroughNodes(NodeModel node) {
     for (var api in apis) {
       for (var action in api.actions) {
-        if (action.id == node.id) {
+        if (action.id == node.nodeId) {
           node.labels = action.labels;
+          node.fields = action.fields;
           break;
         }
       }
       for (var trigger in api.reactions) {
-        if (trigger.id == node.id) {
+        if (trigger.id == node.nodeId) {
           node.labels = trigger.labels;
+          node.fields = trigger.fields;
           break;
         }
       }
     }
     listNodes.add(node);
 
-    if (node.next != null &&
-        node.next!.isNotEmpty &&
-        node.next!.first.nextModel.isNotEmpty) {
-      goThroughNodes(node.next!.first.nextModel.first);
+    if (node.next != null) {
+      for (var next in node.next!) {
+        for (var n in next.nextModel) {
+          goThroughNodes(n);
+        }
+      }
     }
   }
 
@@ -100,7 +106,142 @@ class _WorkflowPageState extends State<WorkflowPage>
                       isRemove[index] = true;
                     });
                   },
-                  onTap: () {},
+                  onTap: () {
+                    showModalBottomSheet<List<String>>(
+                      context: context,
+                      builder: (context) {
+                        return SizedBox(
+                          height: dh(context) / 1.5,
+                          width: dw(context),
+                          child: Column(
+                            children: [
+                              Column(
+                                children: [
+                                  for (int i = 0;
+                                      i < apiModel.fields!.length;
+                                      i++)
+                                    Builder(
+                                      builder: (context) {
+                                        List<TextEditingController> texts =
+                                            List.generate(
+                                          listNodes.length,
+                                          (index) => TextEditingController(),
+                                        );
+
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 20, vertical: 10),
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                  color: Colors.grey, width: 1),
+                                              borderRadius:
+                                                  BorderRadius.circular(5),
+                                            ),
+                                            padding: const EdgeInsets.all(10),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(apiModel.fields![i]
+                                                        ['title'] ??
+                                                    ''),
+                                                TextField(
+                                                  decoration: InputDecoration(
+                                                    hintText: apiModel
+                                                                .fields![i]
+                                                            ['description'] ??
+                                                        '',
+                                                  ),
+                                                  controller:
+                                                      TextEditingController(
+                                                    text: apiModel.config![
+                                                            apiModel.fields![i]
+                                                                ['name']] ??
+                                                        '',
+                                                  ),
+                                                  onChanged: (value) {
+                                                    apiModel.config![
+                                                        apiModel.fields![i]
+                                                            ['name']] = value;
+                                                  },
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    )
+                                ],
+                              ),
+                              // Row(
+                              //   mainAxisAlignment:
+                              //       MainAxisAlignment.spaceBetween,
+                              //   children: [
+                              //     Padding(
+                              //       padding: const EdgeInsets.only(left: 20),
+                              //       child: Container(
+                              //         decoration: BoxDecoration(
+                              //           color: Colors.red,
+                              //           borderRadius: BorderRadius.circular(5),
+                              //         ),
+                              //         padding: const EdgeInsets.all(10),
+                              //         child: const Text('Delete',
+                              //             style:
+                              //                 TextStyle(color: Colors.white)),
+                              //       ),
+                              //     ),
+                              //     Padding(
+                              //       padding: const EdgeInsets.all(10),
+                              //       child: Row(
+                              //         children: [
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.pop(context, apiModel);
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xff574ae2),
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  padding: const EdgeInsets.all(10),
+                                  child: const Text('Update',
+                                      style: TextStyle(color: Colors.white)),
+                                ),
+                              ),
+                              //           sw(20),
+                              //           GestureDetector(
+                              //             onTap: () {
+                              //               Navigator.pop(context);
+                              //             },
+                              //             child: Container(
+                              //               decoration: BoxDecoration(
+                              //                 color: Colors.grey,
+                              //                 borderRadius:
+                              //                     BorderRadius.circular(5),
+                              //               ),
+                              //               padding: const EdgeInsets.all(10),
+                              //               child: const Text('Close',
+                              //                   style: TextStyle(
+                              //                       color: Colors.white)),
+                              //             ),
+                              //           )
+                              //         ],
+                              //       ),
+                              //     ),
+                              //   ],
+                              // )
+                            ],
+                          ),
+                        );
+                      },
+                    ).then((List<String>? data) {
+                      apiModel.config = {
+                        for (var datas in data ?? []) ...{"": data}
+                      };
+                      setState(() {});
+                    } as FutureOr<Null> Function(List<String>? value));
+                  },
                   child: ShakeWidget(
                     duration: const Duration(seconds: 3),
                     shakeConstant: shakeConstant,
@@ -566,27 +707,74 @@ class _WorkflowPageState extends State<WorkflowPage>
               ),
               reverse: true,
               itemCount: listNodes.length,
-              onReorder: (oldIndex, newIndex) {
-                if (newIndex > listNodes.length) {
-                  return;
-                }
-                if (oldIndex < listNodes.length) {
-                  setState(() {
-                    if (oldIndex < newIndex) {
-                      newIndex -= 1;
-                    }
-                    final item = listNodes.removeAt(oldIndex);
-                    listNodes.insert(newIndex, item);
-                  });
-                }
+              onReorder: (oldIndex, newIndex) async {
+                // if (newIndex >= listNodes.length ||
+                //     oldIndex == listNodes.length - 1) {
+                return;
+                // }
+                // if (oldIndex < listNodes.length) {
+                // newIndex--;
+                // await http.patch(
+                //   Uri.parse(
+                //       '$url/api/workflows/${widget.workflow!.id}/nodes/${listNodes[oldIndex].id}'),
+                //   headers: {
+                //     'Content-Type': 'application/json',
+                //     'Authorization':
+                //         'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                //   },
+                //   body: jsonEncode({
+                //     'previous': listNodes[newIndex + 1].id,
+                //     'label': listNodes[newIndex + 1].labels![0]
+                //   }),
+                // );
+                // await http.patch(
+                //   Uri.parse(
+                //       '$url/api/workflows/${widget.workflow!.id}/nodes/${listNodes[newIndex].id}'),
+                //   headers: {
+                //     'Content-Type': 'application/json',
+                //     'Authorization':
+                //         'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                //   },
+                //   body: jsonEncode({
+                //     'previous': listNodes[oldIndex].id,
+                //     'label': listNodes[oldIndex].labels![0]
+                //   }),
+                // );
+                // if (oldIndex != 0) {
+                //   await http.patch(
+                //     Uri.parse(
+                //         '$url/api/workflows/${widget.workflow!.id}/nodes/${listNodes[oldIndex - 1].id}'),
+                //     headers: {
+                //       'Content-Type': 'application/json',
+                //       'Authorization':
+                //           'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                //     },
+                //     body: jsonEncode({
+                //       'previous': listNodes[oldIndex + 1].id,
+                //       'label': listNodes[oldIndex + 1].labels![0]
+                //     }),
+                //   );
+                // }
+                // newIndex++;
+                // setState(() {
+                //   if (oldIndex < newIndex) {
+                //     newIndex -= 1;
+                //   }
+                //   final item = listNodes.removeAt(oldIndex);
+                //   listNodes.insert(newIndex, item);
+                // });
+                // }
               },
               itemBuilder: (context, index) {
-                return Transform.translate(
-                  offset: Offset(0, 15 * index.toDouble()),
+                return GestureDetector(
+                  onLongPress: () {},
                   key: ValueKey(index),
-                  child: apiItem(
-                    index,
-                    listNodes[index],
+                  child: Transform.translate(
+                    offset: Offset(0, 15 * index.toDouble()),
+                    child: apiItem(
+                      index,
+                      listNodes[index],
+                    ),
                   ),
                 );
               },

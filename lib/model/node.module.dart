@@ -12,6 +12,8 @@ class NodeModel {
   final String? imageUrl;
   final String? apiName;
   final Color? color;
+  List<Map<String, dynamic>>? fields;
+  Map<String, dynamic>? config;
 
   NodeModel({
     required this.id,
@@ -24,6 +26,8 @@ class NodeModel {
     this.color,
     this.apiName,
     this.next,
+    this.fields,
+    this.config,
   });
 
   factory NodeModel.fromJson(Map<String, dynamic> json) {
@@ -46,6 +50,14 @@ class NodeModel {
               .map((next) => NextModel.fromJson(next))
               .toList()
           : null,
+      fields: json.containsKey('fields') &&
+              json['fields'] != null &&
+              json['fields'] is List
+          ? (json['fields'] as List)
+              .map((field) => field as Map<String, dynamic>)
+              .toList()
+          : null,
+      config: json.containsKey('config') ? json['config'] : null,
     );
   }
 
@@ -61,6 +73,8 @@ class NodeModel {
       'color': color?.value ?? 0,
       'apiName': apiName,
       'next': next?.map((next) => next.toJson()).toList() ?? [],
+      'fields': fields,
+      'config': config,
     };
   }
 }

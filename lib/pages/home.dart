@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:graphview/GraphView.dart';
 import 'package:mobile/constants/const.dart';
 import 'package:mobile/model/apis.module.dart';
 import 'package:mobile/model/node.module.dart';
@@ -158,6 +159,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               auth: {},
             );
           });
+          NodeModel? serviceNode;
           String apiName = '';
           Color color = Colors.black;
           for (var api in apis) {
@@ -165,12 +167,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               if (action.id == node['nodeId']) {
                 apiName = action.name;
                 color = api.color ?? Colors.black;
+                serviceNode = action;
+                break;
               }
             }
             for (var reaction in api.reactions) {
               if (reaction.id == node['nodeId']) {
                 apiName = reaction.name;
                 color = api.color ?? Colors.black;
+                serviceNode = reaction;
+                break;
               }
             }
           }
@@ -180,6 +186,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             'description': data.description,
             'imageUrl': data.imageUrl,
             'color': color,
+            'fields': serviceNode!.fields,
+            'config': serviceNode.config,
             'type': data.reactions.map((e) => e.id).contains(node['nodeId'])
                 ? 'trigger'
                 : 'action',
