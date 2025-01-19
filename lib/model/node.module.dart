@@ -8,7 +8,7 @@ class NodeModel {
   final String name;
   final String description;
   final String type;
-  final List<String>? labels;
+  List<String>? labels;
   final String? imageUrl;
   final String? apiName;
   final Color? color;

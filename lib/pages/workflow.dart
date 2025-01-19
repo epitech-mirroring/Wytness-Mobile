@@ -52,6 +52,20 @@ class _WorkflowPageState extends State<WorkflowPage>
   }
 
   void goThroughNodes(NodeModel node) {
+    for (var api in apis) {
+      for (var action in api.actions) {
+        if (action.id == node.id) {
+          node.labels = action.labels;
+          break;
+        }
+      }
+      for (var trigger in api.reactions) {
+        if (trigger.id == node.id) {
+          node.labels = trigger.labels;
+          break;
+        }
+      }
+    }
     listNodes.add(node);
 
     if (node.next != null &&
@@ -86,29 +100,7 @@ class _WorkflowPageState extends State<WorkflowPage>
                       isRemove[index] = true;
                     });
                   },
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      builder: (context) => ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
-                        ),
-                        child: SizedBox(
-                          height: dh(context) / 1.1,
-                          child: const ModalSheetWidget(),
-                        ),
-                      ),
-                    ).then((value) {
-                      if (value != null) {
-                        setState(() {
-                          listNodes[index] = value;
-                          apiModel = value;
-                        });
-                      }
-                    });
-                  },
+                  onTap: () {},
                   child: ShakeWidget(
                     duration: const Duration(seconds: 3),
                     shakeConstant: shakeConstant,
@@ -164,17 +156,33 @@ class _WorkflowPageState extends State<WorkflowPage>
               offset: const Offset(0, -25),
               child: AnimatedOpacity(
                 duration: const Duration(milliseconds: 300),
-                opacity: isRemove[index] == false ? 0 : 1,
+                opacity: isRemove[index] ? 1 : 0,
                 child: IconButton(
                   onPressed: () async {
+                    if (!isRemove[index] || index == listNodes.length - 1) {
+                      return;
+                    }
                     await http.delete(
                       Uri.parse(
-                          'http://localhost:4040/api/workflows/${widget.workflow!.id}/nodes/${listNodes[index].id}'),
+                          '$url/api/workflows/${widget.workflow!.id}/nodes/${listNodes[index].id}'),
                       headers: {
                         'Content-Type': 'application/json',
                         'Authorization':
                             'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
                       },
+                    );
+                    await http.patch(
+                      Uri.parse(
+                          '$url/api/workflows/${widget.workflow!.id}/nodes/${listNodes[index - 1].id}'),
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization':
+                            'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                      },
+                      body: jsonEncode({
+                        'previous': listNodes[index + 1].id,
+                        'label': listNodes[index + 1].labels![0]
+                      }),
                     );
                     setState(() {
                       isRemove.removeAt(index);
@@ -273,20 +281,18 @@ class _WorkflowPageState extends State<WorkflowPage>
               ),
               child: SizedBox(
                 height: dh(context) / 1.1,
-                child: const ModalSheetWidget(),
+                child: ModalSheetWidget(
+                  services: listNodes,
+                ),
               ),
             ),
           ).then((NodeModel? value) async {
             if (value != null) {
-              setState(() {
-                isRemove.add(false);
-              });
               try {
                 if (value.type == "trigger") {
-                  listNodes.insert(listNodes.length, value);
-                  await http.post(
+                  final data = await http.post(
                     Uri.parse(
-                        'http://localhost:4040/api/workflows/${widget.workflow!.id}/nodes'),
+                        '$url/api/workflows/${widget.workflow!.id}/nodes'),
                     headers: {
                       'Content-Type': 'application/json',
                       'Authorization':
@@ -297,10 +303,26 @@ class _WorkflowPageState extends State<WorkflowPage>
                       'config': {},
                     }),
                   );
+
+                  setState(() {
+                    isRemove.add(false);
+                    listNodes.insert(
+                      listNodes.length,
+                      NodeModel.fromJson({
+                        ...jsonDecode(data.body),
+                        'name': value.name,
+                        'description': value.description,
+                        'imageUrl': value.imageUrl,
+                        'color': value.color,
+                        'type': value.type,
+                        'labels': value.labels,
+                      }),
+                    );
+                  });
                 } else {
-                  await http.post(
+                  final data = await http.post(
                     Uri.parse(
-                        'http://localhost:4040/api/workflows/${widget.workflow!.id}/nodes'),
+                        '$url/api/workflows/${widget.workflow!.id}/nodes'),
                     headers: {
                       'Content-Type': 'application/json',
                       'Authorization':
@@ -316,7 +338,19 @@ class _WorkflowPageState extends State<WorkflowPage>
                     }),
                   );
                   setState(() {
-                    listNodes.insert(0, value);
+                    isRemove.add(false);
+                    listNodes.insert(
+                      0,
+                      NodeModel.fromJson({
+                        ...jsonDecode(data.body),
+                        'name': value.name,
+                        'description': value.description,
+                        'imageUrl': value.imageUrl,
+                        'color': value.color,
+                        'type': value.type,
+                        'labels': value.labels,
+                      }),
+                    );
                   });
                 }
               } catch (e) {
@@ -396,8 +430,7 @@ class _WorkflowPageState extends State<WorkflowPage>
                             if (widget.workflow == null) {
                               try {
                                 await http.post(
-                                  Uri.parse(
-                                      'http://localhost:4040/api/workflows'),
+                                  Uri.parse('$url/api/workflows'),
                                   headers: {
                                     'Content-Type': 'application/json',
                                     'Authorization':
@@ -418,7 +451,7 @@ class _WorkflowPageState extends State<WorkflowPage>
                               try {
                                 await http.patch(
                                   Uri.parse(
-                                      'http://localhost:4040/api/workflows/${widget.workflow!.id}'),
+                                      '$url/api/workflows/${widget.workflow!.id}'),
                                   headers: {
                                     'Content-Type': 'application/json',
                                     'Authorization':
@@ -505,7 +538,7 @@ class _WorkflowPageState extends State<WorkflowPage>
           GestureDetector(
             onTap: () {
               setState(() {
-                isRemove = List.generate(nodes.length + 1, (index) => false);
+                isRemove = List.generate(listNodes.length, (index) => false);
               });
             },
             child: ReorderableListView.builder(
