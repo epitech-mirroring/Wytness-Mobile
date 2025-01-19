@@ -51,6 +51,8 @@ dependencies:
   palette_generator: ^0.3.3+5
   fl_chart: ^0.70.1
   app_links: ^6.3.3
+  google_sign_in: ^6.2.2
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
