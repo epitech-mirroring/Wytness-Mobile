@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile/service/workflows.service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:mobile/model/apis.module.dart';
 
@@ -23,5 +22,3 @@ Widget sw(double width) {
 }
 
 late SharedPreferences localUser;
-
-WorkflowService workflowService = WorkflowService();

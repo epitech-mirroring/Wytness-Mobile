@@ -8,17 +8,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:mobile/constants/const.dart';
+import 'package:mobile/model/apis.module.dart';
+import 'package:mobile/model/node.module.dart';
 import 'package:mobile/model/workflow.module.dart';
 import 'package:mobile/pages/profile.dart';
 import 'package:mobile/pages/workflow.dart';
 import 'package:mobile/service/auth.service.dart';
-import 'package:mobile/service/workflows.service.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.workflow});
-  final WorkflowService workflow;
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -26,7 +26,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final controller = ScrollController();
-  bool toogled = false;
   late TabController tabController;
   Map<String, dynamic> data = {
     "workflows": 0,
@@ -48,16 +47,16 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   void initState() {
-    widget.workflow.loadFromCache();
     AuthService.services().then((value) {
       setState(() {});
-    });
-    fetchDashBoard().then((value) {
-      setState(() {
-        data = value;
+      fetchDashBoard().then((value) {
+        setState(() {
+          data = value;
+        });
       });
+      fetchWorkflows();
+      setState(() {});
     });
-    fetchWorkflows();
     tabController = TabController(length: 3, vsync: this);
     tabController.index = 1;
     super.initState();
@@ -75,13 +74,47 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         },
       );
       if (response.statusCode == 200) {
-        setState(() {
-          workflows = (jsonDecode(response.body) as List)
-              .map((workflow) => WorkflowModel.fromJson(workflow))
-              .toList();
-        });
+        for (var workflow in (jsonDecode(response.body) as List)) {
+          final stats = await http.get(
+            Uri.parse(
+                'http://localhost:4040/api/statistics/workflows/${workflow['id']}'),
+            headers: {
+              'Content-Type': 'application',
+              'Authorization':
+                  'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+            },
+          );
+
+          final updatedWorkflow = WorkflowModel.fromJson({
+            ...workflow,
+            'executions': jsonDecode(stats.body)['executions'],
+            'dataUsedDownLoad': jsonDecode(stats.body)['dataUsedDownLoad'],
+          });
+
+          final existingIndex =
+              workflows.indexWhere((w) => w.id == workflow['id']);
+
+          if (existingIndex != -1) {
+            workflows[existingIndex] = updatedWorkflow;
+          } else {
+            workflows.add(updatedWorkflow);
+          }
+        }
+        setState(() {});
         for (var id in workflows) {
           getNodes(id.id);
+        }
+        while (apis.isEmpty) {
+          await Future.delayed(const Duration(milliseconds: 100));
+
+          setState(() {
+            workflows = (jsonDecode(response.body) as List)
+                .map((workflow) => WorkflowModel.fromJson(workflow))
+                .toList();
+          });
+          for (var id in workflows) {
+            getNodes(id.id);
+          }
         }
       } else {
         throw Exception('Failed to create workflow');
@@ -102,8 +135,51 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         },
       );
       if (response.statusCode == 200) {
-        List<dynamic> nodes = jsonDecode(response.body);
-        workflows.firstWhere((element) => element.id == id).nodes = nodes;
+        List<NodeModel> nodes =
+            (jsonDecode(response.body) as List<dynamic>).map((node) {
+          final data = apis.firstWhere((api) {
+            return api.reactions.map((e) => e.id).contains(node['nodeId']) ||
+                api.actions.map((e) => e.id).contains(node['nodeId']);
+          }, orElse: () {
+            return ApiModel(
+              name: '',
+              imageUrl: '',
+              description: '',
+              actions: [],
+              reactions: [],
+              auth: {},
+            );
+          });
+          String apiName = '';
+          Color color = Colors.black;
+          for (var api in apis) {
+            for (var action in api.actions) {
+              if (action.id == node['nodeId']) {
+                apiName = action.name;
+                color = api.color ?? Colors.black;
+              }
+            }
+            for (var reaction in api.reactions) {
+              if (reaction.id == node['nodeId']) {
+                apiName = reaction.name;
+                color = api.color ?? Colors.black;
+              }
+            }
+          }
+          return NodeModel.fromJson({
+            ...node,
+            'name': apiName,
+            'description': data.description,
+            'imageUrl': data.imageUrl,
+            'color': color,
+            'type': data.reactions.map((e) => e.id).contains(node['nodeId'])
+                ? 'trigger'
+                : 'action',
+          });
+        }).toList();
+        setState(() {
+          workflows.firstWhere((workflow) => workflow.id == id).nodes = nodes;
+        });
       }
     } catch (e) {
       if (kDebugMode) {
@@ -178,8 +254,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: ExpansionTile(
-                        backgroundColor: api.color,
-                        collapsedBackgroundColor: api.color,
+                        backgroundColor: api.color == Colors.white
+                            ? Colors.black
+                            : api.color,
+                        collapsedBackgroundColor: api.color == Colors.white
+                            ? Colors.black
+                            : api.color,
                         title: Text(
                           api.name,
                           style: const TextStyle(
@@ -218,31 +298,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           sh(10),
                           CupertinoButton(
                             onPressed: () {
-                              WebViewController controller = WebViewController()
-                                ..loadRequest(Uri.parse(api.auth['url']));
-                              showModalBottomSheet(
-                                isScrollControlled: true,
-                                context: context,
-                                builder: (context) {
-                                  return ClipRRect(
-                                    borderRadius: BorderRadius.circular(20),
-                                    child: SizedBox(
-                                      height: dh(context) / 1.1,
-                                      child: Column(
-                                        children: [
-                                          SizedBox(
-                                            height: dh(context) / 1.1,
-                                            width: dw(context),
-                                            child: WebViewWidget(
-                                              controller: controller,
-                                            ),
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
+                              if (!api.auth['connected']) {
+                                launchUrl(
+                                  Uri.parse(
+                                    api.auth['url'],
+                                  ),
+                                  mode: LaunchMode.externalApplication,
+                                );
+                              }
                             },
                             child: Container(
                               decoration: BoxDecoration(
@@ -262,14 +325,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   mainAxisSize: MainAxisSize.min,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(
-                                      CupertinoIcons.link,
-                                      size: 20,
-                                      color: Colors.white,
-                                    ),
+                                    if (!api.auth['connected'])
+                                      const Icon(
+                                        CupertinoIcons.link,
+                                        size: 20,
+                                        color: Colors.white,
+                                      ),
                                     sw(2),
                                     Text(
-                                      "Link to ${api.name}",
+                                      api.auth['connected']
+                                          ? 'Connected'
+                                          : "Link to ${api.name}",
                                       style: const TextStyle(
                                         color: Colors.white,
                                       ),
@@ -442,75 +508,84 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               ),
                             ],
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              sh(10),
-                              const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "Data used",
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.arrow_downward,
-                                    color: Colors.black,
-                                    size: 13,
-                                  ),
-                                  Text(
-                                    "(Mb)",
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              sh(10),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(right: 10),
-                                  child: Builder(builder: (context) {
-                                    double percentage =
-                                        ((data['dataUsedDownLoad'] / 5000) *
-                                            100);
-
-                                    return Text(
-                                      '${data['dataUsedDownLoad']}/5000 (${percentage..toStringAsFixed(2)}%)',
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                      ),
-                                    );
-                                  }),
-                                ),
-                              ),
-                              sh(10),
-                              Container(
-                                width: 140,
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(5),
-                                  color: Colors.grey.withOpacity(0.5),
-                                ),
-                                child: Stack(
+                          child: Builder(builder: (context) {
+                            late double palier;
+                            if (data['dataUsedDownLoad'] < 10) {
+                              palier = 10;
+                            } else if (data['dataUsedDownLoad'] < 50) {
+                              palier = 50;
+                            } else if (data['dataUsedDownLoad'] < 100) {
+                              palier = 100;
+                            } else if (data['dataUsedDownLoad'] < 5000) {
+                              palier = 5000;
+                            }
+                            double percentage =
+                                ((data['dataUsedDownLoad'] / palier) * 100);
+                            return Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                sh(10),
+                                const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Container(
-                                      width: 80,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(5),
-                                        color: Colors.red,
+                                    Text(
+                                      "Data used",
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.arrow_downward,
+                                      color: Colors.black,
+                                      size: 13,
+                                    ),
+                                    Text(
+                                      "(Mb)",
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ],
                                 ),
-                              )
-                            ],
-                          ),
+                                sh(10),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(right: 10),
+                                    child: Text(
+                                      '${data['dataUsedDownLoad']}/$palier (${percentage.toStringAsFixed(2)}%)',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                sh(10),
+                                Container(
+                                  width: 140,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5),
+                                    color: Colors.grey.withOpacity(0.5),
+                                  ),
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                        width: 140 * percentage,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                          color: Colors.red,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              ],
+                            );
+                          }),
                         ),
                         Container(
                           width: dw(context) / 2.5,
@@ -527,77 +602,84 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               ),
                             ],
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              sh(10),
-                              const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    "Data used",
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Icon(
-                                    Icons.arrow_upward,
-                                    color: Colors.black,
-                                    size: 13,
-                                  ),
-                                  Text(
-                                    "(Mb)",
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              sh(10),
-                              Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(right: 10),
-                                    child: Builder(
-                                      builder: (context) {
-                                        double percentage =
-                                            ((data['dataUsedDownLoad'] / 5000) *
-                                                100);
-
-                                        return Text(
-                                          '${data['dataUsedUpload']}/5000 (${percentage.toStringAsFixed(2)}%',
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  )),
-                              sh(10),
-                              Container(
-                                width: 140,
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(5),
-                                  color: Colors.grey.withOpacity(0.5),
-                                ),
-                                child: Stack(
+                          child: Builder(builder: (context) {
+                            double percentage =
+                                ((data['dataUsedDownLoad'] / 5000) * 100);
+                            late double palier;
+                            if (data['dataUsedDownLoad'] < 10) {
+                              palier = 10;
+                            } else if (data['dataUsedDownLoad'] < 50) {
+                              palier = 50;
+                            } else if (data['dataUsedDownLoad'] < 100) {
+                              palier = 100;
+                            } else if (data['dataUsedDownLoad'] < 5000) {
+                              palier = 5000;
+                            }
+                            return Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                sh(10),
+                                const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Container(
-                                      width: 120,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(5),
-                                        color: const Color(0xff2aa98c),
+                                    Text(
+                                      "Data used",
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.arrow_upward,
+                                      color: Colors.black,
+                                      size: 13,
+                                    ),
+                                    Text(
+                                      "(Mb)",
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ],
                                 ),
-                              ),
-                              Container()
-                            ],
-                          ),
+                                sh(10),
+                                Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(right: 10),
+                                      child: Text(
+                                        '${data['dataUsedUpload']}/$palier (${percentage.toStringAsFixed(2)}%)',
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    )),
+                                sh(10),
+                                Container(
+                                  width: 140,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(5),
+                                    color: Colors.grey.withOpacity(0.5),
+                                  ),
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                        width: 140 * percentage,
+                                        decoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(5),
+                                          color: const Color(0xff2aa98c),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Container()
+                              ],
+                            );
+                          }),
                         ),
                       ],
                     ),
@@ -641,43 +723,303 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             ],
                           ),
                           ListView.builder(
-                            itemCount: 10,
+                            itemCount: workflows.take(4).length,
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemBuilder: (context, index) {
+                              bool toogled =
+                                  workflows[index].status != 'enabled';
                               return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 10,
+                                padding: const EdgeInsets.only(
+                                  left: 20,
+                                  right: 20,
+                                  bottom: 10,
                                 ),
-                                child: Container(
-                                  height: 50,
-                                  width: 100,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    color: Colors.white,
-                                    border: Border.all(
-                                      color: Colors.grey.withOpacity(0.5),
-                                      width: 1,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.withOpacity(0.5),
-                                        spreadRadius: 1,
-                                        blurRadius: 5,
-                                        offset: const Offset(0, 3),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      CupertinoPageRoute(
+                                        builder: (context) {
+                                          return WorkflowPage(
+                                            workflow: workflows[index],
+                                          );
+                                        },
                                       ),
-                                    ],
-                                  ),
-                                  child: const Row(
-                                    children: [
-                                      //TODO LAST WORKFLOWS RUN WITH 3 LASTS NODES
-                                    ],
+                                    ).then((value) {
+                                      fetchWorkflows();
+                                      setState(() {});
+                                    });
+                                  },
+                                  child: Container(
+                                    height: 60,
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      color: Colors.white,
+                                      border: Border.all(
+                                        color: Colors.grey.withOpacity(0.5),
+                                        width: 1,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.5),
+                                          spreadRadius: 1,
+                                          blurRadius: 5,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Builder(
+                                          builder: (context) {
+                                            List<NodeModel> nodes =
+                                                workflows[index].nodes ?? [];
+                                            List<NodeModel> listNodes = [];
+                                            void goThroughNodes(
+                                                NodeModel node) {
+                                              listNodes.add(node);
+
+                                              if (node.next != null &&
+                                                  node.next!.isNotEmpty &&
+                                                  node.next!.first.nextModel
+                                                      .isNotEmpty) {
+                                                goThroughNodes(node.next!.first
+                                                    .nextModel.first);
+                                              }
+                                            }
+
+                                            if (nodes.isNotEmpty) {
+                                              goThroughNodes(nodes.first);
+                                              listNodes =
+                                                  listNodes.reversed.toList();
+                                            }
+                                            return Row(
+                                              children: [
+                                                sw(10),
+                                                for (var node in listNodes.take(
+                                                    listNodes.length == 2
+                                                        ? 2
+                                                        : 1))
+                                                  Container(
+                                                    width: 35,
+                                                    height: 35,
+                                                    color: node.color ==
+                                                            Colors.white
+                                                        ? const Color(
+                                                            0xff574ae2)
+                                                        : node.color,
+                                                    padding:
+                                                        const EdgeInsets.all(8),
+                                                    child: SvgPicture.network(
+                                                      node.imageUrl!,
+                                                      colorFilter:
+                                                          const ColorFilter
+                                                              .mode(
+                                                        Colors.white,
+                                                        BlendMode.srcIn,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                if (listNodes.length > 2)
+                                                  Container(
+                                                    width: 35,
+                                                    height: 35,
+                                                    color: Colors.black,
+                                                    alignment: Alignment.center,
+                                                    child: Text(
+                                                      "+${listNodes.length - 1}",
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.w900,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                sw(10),
+                                                Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    sh(5),
+                                                    Text(
+                                                      workflows[index].name,
+                                                      style: const TextStyle(
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    Row(
+                                                      children: [
+                                                        Text(
+                                                          "${workflows[index].description} • ",
+                                                          style:
+                                                              const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w300,
+                                                          ),
+                                                        ),
+                                                        SvgPicture.asset(
+                                                          'assets/download-regular.svg',
+                                                          width: 12,
+                                                        ),
+                                                        Text(
+                                                          " ${((workflows[index].dataUsedDownLoad ?? 0) / 1000 / 1000).ceil()}Mo",
+                                                          style:
+                                                              const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w300,
+                                                            fontSize: 12,
+                                                          ),
+                                                        ),
+                                                        sw(3),
+                                                        const Icon(
+                                                          CupertinoIcons
+                                                              .arrow_2_circlepath,
+                                                          size: 12,
+                                                        ),
+                                                        Text(
+                                                          " ${workflows[index].executions ?? 0}",
+                                                          style:
+                                                              const TextStyle(
+                                                            fontWeight:
+                                                                FontWeight.w300,
+                                                            fontSize: 12,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    sh(5)
+                                                  ],
+                                                )
+                                              ],
+                                            );
+                                          },
+                                        ),
+                                        Row(
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () async {
+                                                if (workflows[index].status ==
+                                                    'enabled') {
+                                                  await http.patch(
+                                                    Uri.parse(
+                                                        'http://localhost:4040/api/workflows/${workflows[index].id}'),
+                                                    headers: {
+                                                      'Content-Type':
+                                                          'application/json',
+                                                      'Authorization':
+                                                          'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                                                    },
+                                                    body: jsonEncode({
+                                                      "name":
+                                                          workflows[index].name,
+                                                      "description":
+                                                          workflows[index]
+                                                              .description,
+                                                      "status": "disabled"
+                                                    }),
+                                                  );
+                                                } else {
+                                                  await http.patch(
+                                                    Uri.parse(
+                                                        'http://localhost:4040/api/workflows/${workflows[index].id}'),
+                                                    headers: {
+                                                      'Content-Type':
+                                                          'application/json',
+                                                      'Authorization':
+                                                          'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                                                    },
+                                                    body: jsonEncode({
+                                                      "name":
+                                                          workflows[index].name,
+                                                      "description":
+                                                          workflows[index]
+                                                              .description,
+                                                      "status": "enabled"
+                                                    }),
+                                                  );
+                                                }
+                                                fetchWorkflows();
+                                              },
+                                              child: Padding(
+                                                padding: const EdgeInsets.only(
+                                                    right: 4),
+                                                child: Container(
+                                                  width: 55,
+                                                  height: 25,
+                                                  decoration: BoxDecoration(
+                                                    color: toogled
+                                                        ? const Color(
+                                                            0xffe76e50)
+                                                        : const Color(
+                                                            0xff574ae2),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            4),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisAlignment: toogled
+                                                        ? MainAxisAlignment
+                                                            .start
+                                                        : MainAxisAlignment.end,
+                                                    children: [
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .only(
+                                                                right: 2,
+                                                                left: 2),
+                                                        child: Container(
+                                                          width: 22,
+                                                          height: 22,
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: toogled
+                                                                ? const Color(
+                                                                    0xffffcbbe)
+                                                                : const Color
+                                                                    .fromARGB(
+                                                                    255,
+                                                                    232,
+                                                                    223,
+                                                                    255),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        2),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Icon(
+                                              CupertinoIcons
+                                                  .exclamationmark_triangle,
+                                              size: 20,
+                                              color: workflows[index].name ==
+                                                      'error'
+                                                  ? Colors.red
+                                                  : Colors.grey,
+                                            ),
+                                            sw(4)
+                                          ],
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );
                             },
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -789,29 +1131,45 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   itemCount: workflows.length,
                   shrinkWrap: true,
                   itemBuilder: (context, index) {
-                    return Slidable(
-                      key: ValueKey(workflows[index].name),
-                      endActionPane: ActionPane(
-                        motion: const DrawerMotion(),
-                        children: [
-                          SlidableAction(
-                            onPressed: (context) {
-                              widget.workflow
-                                  .deleteWorkflow(workflows[index].name);
-                              setState(() {});
-                            },
-                            backgroundColor: CupertinoColors.systemRed,
-                            foregroundColor: CupertinoColors.white,
-                            icon: CupertinoIcons.delete,
-                            label: 'Delete',
-                          ),
-                        ],
+                    bool toogled = workflows[index].status != 'enabled';
+                    return Padding(
+                      padding: const EdgeInsets.only(
+                        left: 20,
+                        right: 20,
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.only(
-                          left: 20,
-                          right: 20,
-                          bottom: 10,
+                      child: Slidable(
+                        key: ValueKey(workflows[index].name),
+                        endActionPane: ActionPane(
+                          motion: const DrawerMotion(),
+                          children: [
+                            SlidableAction(
+                              onPressed: (context) async {
+                                try {
+                                  await http.delete(
+                                    Uri.parse(
+                                      'http://localhost:4040/api/workflows/${workflows[index].id}',
+                                    ),
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'Authorization':
+                                          'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                                    },
+                                  );
+                                } catch (e) {
+                                  if (kDebugMode) {
+                                    print(e);
+                                  }
+                                }
+                                workflows.removeAt(index);
+                                setState(() {});
+                              },
+                              borderRadius: BorderRadius.circular(10),
+                              backgroundColor: CupertinoColors.systemRed,
+                              foregroundColor: CupertinoColors.white,
+                              icon: CupertinoIcons.delete,
+                              label: 'Delete',
+                            ),
+                          ],
                         ),
                         child: GestureDetector(
                           onTap: () {
@@ -820,12 +1178,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                               CupertinoPageRoute(
                                 builder: (context) {
                                   return WorkflowPage(
-                                    workflow: widget.workflow,
-                                    index: index,
+                                    workflow: workflows[index],
                                   );
                                 },
                               ),
                             ).then((value) {
+                              fetchWorkflows();
                               setState(() {});
                             });
                           },
@@ -851,104 +1209,154 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Row(
-                                  children: [
-                                    sw(10),
-                                    for (var node in widget
-                                        .workflow.workflows[index].apis
-                                        .take(widget.workflow.workflows[index]
-                                                    .apis.length ==
-                                                2
-                                            ? 2
-                                            : 1))
-                                      Container(
-                                        width: 35,
-                                        height: 35,
-                                        color: node.color,
-                                        padding: const EdgeInsets.all(8),
-                                        child: SvgPicture.network(
-                                          node.imageUrl,
-                                          colorFilter: const ColorFilter.mode(
-                                            Colors.white,
-                                            BlendMode.srcIn,
+                                Builder(builder: (context) {
+                                  List<NodeModel> nodes =
+                                      workflows[index].nodes ?? [];
+                                  List<NodeModel> listNodes = [];
+                                  void goThroughNodes(NodeModel node) {
+                                    listNodes.add(node);
+
+                                    if (node.next != null &&
+                                        node.next!.isNotEmpty &&
+                                        node.next!.first.nextModel.isNotEmpty) {
+                                      goThroughNodes(
+                                          node.next!.first.nextModel.first);
+                                    }
+                                  }
+
+                                  if (nodes.isNotEmpty) {
+                                    goThroughNodes(nodes.first);
+                                    listNodes = listNodes.reversed.toList();
+                                  }
+                                  return Row(
+                                    children: [
+                                      sw(10),
+                                      for (var node in listNodes
+                                          .take(listNodes.length == 2 ? 2 : 1))
+                                        Container(
+                                          width: 35,
+                                          height: 35,
+                                          color: node.color == Colors.white
+                                              ? const Color(0xff574ae2)
+                                              : node.color,
+                                          padding: const EdgeInsets.all(8),
+                                          child: SvgPicture.network(
+                                            node.imageUrl!,
+                                            colorFilter: const ColorFilter.mode(
+                                              Colors.white,
+                                              BlendMode.srcIn,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    if (widget.workflow.workflows[index].apis
-                                            .length >
-                                        2)
-                                      Container(
-                                        width: 35,
-                                        height: 35,
-                                        color: Colors.black,
-                                        alignment: Alignment.center,
-                                        child: Text(
-                                          "+${widget.workflow.workflows[index].apis.length - 1}",
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w900,
+                                      if (listNodes.length > 2)
+                                        Container(
+                                          width: 35,
+                                          height: 35,
+                                          color: Colors.black,
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            "+${listNodes.length - 1}",
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w900,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    sw(10),
-                                    Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        sh(5),
-                                        Text(
-                                          workflows[index].name,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
+                                      sw(10),
+                                      Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          sh(5),
+                                          Text(
+                                            workflows[index].name,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
-                                        ),
-                                        Row(
-                                          children: [
-                                            Text(
-                                              "${workflows[index].description} • ",
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w300,
+                                          Row(
+                                            children: [
+                                              Text(
+                                                "${workflows[index].description} • ",
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w300,
+                                                ),
                                               ),
-                                            ),
-                                            SvgPicture.asset(
-                                              'assets/download-regular.svg',
-                                              width: 12,
-                                            ),
-                                            const Text(
-                                              " 1000Mo",
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w300,
-                                                fontSize: 12,
+                                              SvgPicture.asset(
+                                                'assets/download-regular.svg',
+                                                width: 12,
                                               ),
-                                            ),
-                                            sw(3),
-                                            const Icon(
-                                              CupertinoIcons.arrow_2_circlepath,
-                                              size: 12,
-                                            ),
-                                            const Text(
-                                              " 5",
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w300,
-                                                fontSize: 12,
+                                              Text(
+                                                " ${((workflows[index].dataUsedDownLoad ?? 0) / 1000 / 1000).ceil()}Mo",
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w300,
+                                                  fontSize: 12,
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        sh(5)
-                                      ],
-                                    )
-                                  ],
-                                ),
+                                              sw(3),
+                                              const Icon(
+                                                CupertinoIcons
+                                                    .arrow_2_circlepath,
+                                                size: 12,
+                                              ),
+                                              Text(
+                                                " ${workflows[index].executions ?? 0}",
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w300,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          sh(5)
+                                        ],
+                                      )
+                                    ],
+                                  );
+                                }),
                                 Row(
                                   children: [
                                     GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          toogled = !toogled;
-                                        });
+                                      onTap: () async {
+                                        if (workflows[index].status ==
+                                            'enabled') {
+                                          await http.patch(
+                                            Uri.parse(
+                                                'http://localhost:4040/api/workflows/${workflows[index].id}'),
+                                            headers: {
+                                              'Content-Type':
+                                                  'application/json',
+                                              'Authorization':
+                                                  'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                                            },
+                                            body: jsonEncode({
+                                              "name": workflows[index].name,
+                                              "description":
+                                                  workflows[index].description,
+                                              "status": "disabled"
+                                            }),
+                                          );
+                                        } else {
+                                          await http.patch(
+                                            Uri.parse(
+                                                'http://localhost:4040/api/workflows/${workflows[index].id}'),
+                                            headers: {
+                                              'Content-Type':
+                                                  'application/json',
+                                              'Authorization':
+                                                  'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                                            },
+                                            body: jsonEncode({
+                                              "name": workflows[index].name,
+                                              "description":
+                                                  workflows[index].description,
+                                              "status": "enabled"
+                                            }),
+                                          );
+                                        }
+                                        fetchWorkflows();
                                       },
                                       child: Padding(
                                         padding:
@@ -991,11 +1399,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                         ),
                                       ),
                                     ),
-                                    const Icon(
+                                    Icon(
                                       CupertinoIcons.exclamationmark_triangle,
                                       size: 20,
+                                      color: workflows[index].name == 'error'
+                                          ? Colors.red
+                                          : Colors.grey,
                                     ),
-                                    sw(4)
+                                    sw(10)
                                   ],
                                 ),
                               ],
@@ -1016,10 +1427,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     context,
                     CupertinoPageRoute(
                       builder: (context) {
-                        return WorkflowPage(workflow: widget.workflow);
+                        return const WorkflowPage(workflow: null);
                       },
                     ),
                   ).then((value) {
+                    fetchWorkflows();
                     setState(() {});
                   });
                 },

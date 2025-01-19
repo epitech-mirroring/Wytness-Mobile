@@ -256,9 +256,7 @@ class _SignupState extends State<SignInPage> {
       Navigator.pushAndRemoveUntil(
         context,
         CupertinoPageRoute<Widget>(
-          builder: (BuildContext context) => HomePage(
-            workflow: workflowService,
-          ),
+          builder: (BuildContext context) => const HomePage(),
         ),
         (Route route) => true,
       );

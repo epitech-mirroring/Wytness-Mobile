@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "705128878766",
+    "project_id": "wytness-6c289",
+    "storage_bucket": "wytness-6c289.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:705128878766:android:2692986c33792ff5ed133f",
+        "android_client_info": {
+          "package_name": "com.wytness.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "705128878766-v194uqap5lidh0biu2gmpbtqrvr2lut2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wytness.app",
+            "certificate_hash": "61892988b7b42c45bc3a285b7574b78079ce9ebf"
+          }
+        },
+        {
+          "client_id": "705128878766-ihee7e3lhk45fgk2d1qr5eipa1bmm683.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyT4Iv40aFo6MUFaaXlu-cFOVqGDs4-2U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "705128878766-ihee7e3lhk45fgk2d1qr5eipa1bmm683.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "705128878766-gp133p43qfpu6mpqesff69b5ff8ak2kc.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.wytness.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "705128878766",
+    "project_id": "wytness-6c289",
+    "storage_bucket": "wytness-6c289.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:705128878766:android:2692986c33792ff5ed133f",
+        "android_client_info": {
+          "package_name": "com.wytness.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyT4Iv40aFo6MUFaaXlu-cFOVqGDs4-2U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

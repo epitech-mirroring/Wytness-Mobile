@@ -1,8 +1,10 @@
 import 'dart:ui';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import 'package:mobile/constants/const.dart';
 import 'package:mobile/pages/home.dart';
@@ -117,32 +119,70 @@ class _SignupState extends State<SignupPage> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                Container(
-                                  height: 40,
-                                  width: 120,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(5),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.all(5),
-                                        child: Image.asset(
-                                          'assets/signin/google.png',
+                                GestureDetector(
+                                  onTap: () async {
+                                    try {
+                                      final GoogleSignIn googleSignIn =  GoogleSignIn();
+                                      final GoogleSignInAccount? googleUser =
+                                          await googleSignIn.signIn();
+
+                                      if (googleUser == null) {
+                                        return;
+                                      }
+
+                                      final GoogleSignInAuthentication
+                                          googleAuth =
+                                          await googleUser.authentication;
+
+                                      final credential =
+                                          GoogleAuthProvider.credential(
+                                        accessToken: googleAuth.accessToken,
+                                        idToken: googleAuth.idToken,
+                                      );
+                                      googleUser.email;
+                                      // final UserCredential userCredential =
+                                      //     await _auth
+                                      //         .signInWithCredential(credential);
+
+                                      // setState(() {
+                                      //   _user = userCredential.user;
+                                      // });
+
+                                      // print(
+                                      //     'Signed in as ${_user!.displayName}');
+                                    } catch (error) {
+                                      print(
+                                          'Error during Google sign-in: $error');
+                                    }
+                                  },
+                                  child: Container(
+                                    height: 40,
+                                    width: 120,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(5),
+                                          child: Image.asset(
+                                            'assets/signin/google.png',
+                                          ),
                                         ),
-                                      ),
-                                      sw(5),
-                                      const Text(
-                                        'Google',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
+                                        sw(5),
+                                        const Text(
+                                          'Google',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
-                                      ),
-                                      sw(5),
-                                    ],
+                                        sw(5),
+                                      ],
+                                    ),
                                   ),
                                 ),
                                 Container(
@@ -280,9 +320,7 @@ class _SignupState extends State<SignupPage> {
       Navigator.pushAndRemoveUntil(
         context,
         CupertinoPageRoute<Widget>(
-          builder: (BuildContext context) => HomePage(
-            workflow: workflowService,
-          ),
+          builder: (BuildContext context) => const HomePage(),
         ),
         (Route route) => true,
       );

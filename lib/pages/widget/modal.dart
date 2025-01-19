@@ -1,9 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:mobile/constants/const.dart';
-import 'package:mobile/constants/datas.dart';
-import 'package:mobile/model/apis.module.dart';
+import 'package:mobile/model/node.module.dart';
 
 class ModalSheetWidget extends StatefulWidget {
   const ModalSheetWidget({super.key});
@@ -47,15 +46,12 @@ class _ModalSheetWidgetState extends State<ModalSheetWidget> {
               final api = apis[index];
               return ExpansionTile(
                 title: Text(api.name),
-                leading: SizedBox(
-                  width: 50,
-                  height: 50,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: CachedNetworkImage(
-                      imageUrl: api.imageUrl,
-                      fit: BoxFit.cover,
-                    ),
+                leading: Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: SvgPicture.network(api.imageUrl),
                   ),
                 ),
                 children: [
@@ -64,27 +60,28 @@ class _ModalSheetWidgetState extends State<ModalSheetWidget> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Text(api.description),
                   ),
-                  sh(10),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: [
-                        const Icon(CupertinoIcons.arrow_2_squarepath),
-                        sw(5),
-                        const Text(
-                          'Actions',
-                          style: TextStyle(
-                            fontFamily: 'Arial',
-                            fontSize: 15,
-                            decoration: TextDecoration.underline,
-                          ),
-                        )
-                      ],
+                  if (api.actions.isNotEmpty) sh(10),
+                  if (api.actions.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          const Icon(CupertinoIcons.arrow_2_squarepath),
+                          sw(5),
+                          const Text(
+                            'Actions',
+                            style: TextStyle(
+                              fontFamily: 'Arial',
+                              fontSize: 15,
+                              decoration: TextDecoration.underline,
+                            ),
+                          )
+                        ],
+                      ),
                     ),
-                  ),
                   sh(10),
                   SizedBox(
-                    height: 40,
+                    height: api.actions.isEmpty ? 0 : 40,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: api.actions.length,
@@ -103,17 +100,21 @@ class _ModalSheetWidgetState extends State<ModalSheetWidget> {
                                 onPressed: () {
                                   Navigator.pop(
                                     context,
-                                    ApiModel(
-                                      name: api.name,
-                                      imageUrl: api.imageUrl,
+                                    NodeModel(
+                                      name: action.name,
                                       description: api.description,
-                                      actions: [action],
-                                      reactions: [],
+                                      id: action.id,
+                                      nodeId: action.nodeId,
+                                      imageUrl: api.imageUrl,
+                                      apiName: api.name,
+                                      type: action.type,
+                                      labels: action.labels,
+                                      color: api.color,
                                     ),
                                   );
                                 },
                                 child: Text(
-                                  action,
+                                  action.name,
                                   style: const TextStyle(
                                     fontFamily: 'Arial',
                                     fontSize: 15,
@@ -127,26 +128,28 @@ class _ModalSheetWidgetState extends State<ModalSheetWidget> {
                       },
                     ),
                   ),
-                  sh(10),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: [
-                        const Icon(CupertinoIcons.arrow_2_squarepath),
-                        sw(5),
-                        const Text(
-                          'Reaction',
-                          style: TextStyle(
-                            fontFamily: 'Arial',
-                            fontSize: 15,
-                            decoration: TextDecoration.underline,
-                          ),
-                        )
-                      ],
+                  if (api.reactions.isNotEmpty) sh(10),
+                  if (api.reactions.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          const Icon(CupertinoIcons.arrow_2_squarepath),
+                          sw(5),
+                          const Text(
+                            'Reactions',
+                            style: TextStyle(
+                              fontFamily: 'Arial',
+                              fontSize: 15,
+                              decoration: TextDecoration.underline,
+                            ),
+                          )
+                        ],
+                      ),
                     ),
-                  ),
+                  if (api.reactions.isNotEmpty) sh(10),
                   SizedBox(
-                    height: 40,
+                    height: api.reactions.isEmpty ? 0 : 40,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: api.reactions.length,
@@ -165,17 +168,20 @@ class _ModalSheetWidgetState extends State<ModalSheetWidget> {
                                 onPressed: () {
                                   Navigator.pop(
                                     context,
-                                    ApiModel(
-                                      name: api.name,
-                                      imageUrl: api.imageUrl,
+                                    NodeModel(
+                                      name: reaction.name,
                                       description: api.description,
-                                      actions: [],
-                                      reactions: [reaction],
+                                      id: reaction.id,
+                                      imageUrl: api.imageUrl,
+                                      apiName: api.name,
+                                      type: reaction.type,
+                                      labels: reaction.labels,
+                                      color: api.color,
                                     ),
                                   );
                                 },
                                 child: Text(
-                                  reaction,
+                                  reaction.name,
                                   style: const TextStyle(
                                     fontFamily: 'Arial',
                                     fontSize: 15,
