@@ -1,24 +1,21 @@
+import 'dart:convert';
 import 'dart:ui';
 
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_shake_animated/flutter_shake_animated.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:mobile/constants/const.dart';
-import 'package:mobile/model/apis.module.dart';
-import 'package:mobile/model/workflows.module.dart';
+import 'package:mobile/model/node.module.dart';
+import 'package:mobile/model/workflow.module.dart';
 import 'package:mobile/pages/widget/modal.dart';
-import 'package:mobile/service/workflows.service.dart';
-import 'package:uuid/uuid.dart';
+import 'package:http/http.dart' as http;
 
 class WorkflowPage extends StatefulWidget {
-  const WorkflowPage({
-    super.key,
-    required this.workflow,
-    this.index,
-  });
-  final WorkflowService workflow;
-  final int? index;
+  const WorkflowPage({super.key, required this.workflow});
+  final WorkflowModel? workflow;
 
   @override
   State<WorkflowPage> createState() => _WorkflowPageState();
@@ -30,21 +27,38 @@ class _WorkflowPageState extends State<WorkflowPage>
   late Animation<double> animation;
   final ShakeRotateConstant1 shakeConstant = ShakeRotateConstant1();
   List<bool> isRemove = [];
-  List<ApiModel> selectedApi = [];
+  List<NodeModel> nodes = [];
+  List<NodeModel> listNodes = [];
 
   @override
   void initState() {
     super.initState();
-    if (widget.index != null) {
-      selectedApi = widget.workflow.workflows[widget.index!].apis;
+    if (widget.workflow != null) {
+      nodes = widget.workflow?.nodes ?? [];
+      if (widget.workflow != null) {
+        nodes = widget.workflow?.nodes ?? [];
+        if (nodes.isNotEmpty) {
+          goThroughNodes(nodes.first);
+          listNodes = listNodes.reversed.toList();
+        }
+      }
     }
     animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-
     animation = Tween<double>(begin: 1, end: 0).animate(animationController);
-    isRemove = List.generate(selectedApi.length + 1, (index) => false);
+    isRemove = List.generate(listNodes.length, (index) => false);
+  }
+
+  void goThroughNodes(NodeModel node) {
+    listNodes.add(node);
+
+    if (node.next != null &&
+        node.next!.isNotEmpty &&
+        node.next!.first.nextModel.isNotEmpty) {
+      goThroughNodes(node.next!.first.nextModel.first);
+    }
   }
 
   @override
@@ -55,26 +69,24 @@ class _WorkflowPageState extends State<WorkflowPage>
 
   bool isPlaying = false;
 
-  Widget addApi({Key? key}) {
-    return SizedBox(
+  Widget apiItem(int index, NodeModel apiModel, {Key? key}) {
+    return Stack(
       key: key,
-      height: selectedApi.isEmpty ? dh(context) / 2 : null,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(width: 1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                height: 80,
-                width: 130,
-                child: IconButton(
-                  onPressed: () {
+      alignment: Alignment.bottomCenter,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            sw(50),
+            Column(
+              children: [
+                GestureDetector(
+                  onDoubleTap: () {
+                    setState(() {
+                      isRemove[index] = true;
+                    });
+                  },
+                  onTap: () {
                     showModalBottomSheet(
                       context: context,
                       isScrollControlled: true,
@@ -91,155 +103,147 @@ class _WorkflowPageState extends State<WorkflowPage>
                     ).then((value) {
                       if (value != null) {
                         setState(() {
-                          isRemove.add(false);
-                          selectedApi.add(value);
+                          listNodes[index] = value;
+                          apiModel = value;
                         });
                       }
                     });
                   },
-                  icon: const Icon(
-                    Icons.add,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (selectedApi.isEmpty)
-            Column(
-              children: [
-                sh(20),
-                const Text(
-                  'Add your first API',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget apiItem(int index, {Key? key}) {
-    return Row(
-      key: key,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        sw(50),
-        Column(
-          children: [
-            GestureDetector(
-              // onLongPress: () {
-              //   setState(() {
-              //     isRemove[index] = true;
-              //   });
-              // },
-              onTap: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  builder: (context) => ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                    child: SizedBox(
-                      height: dh(context) / 1.1,
-                      child: const ModalSheetWidget(),
-                    ),
-                  ),
-                ).then((value) {
-                  if (value != null) {
-                    setState(() {
-                      selectedApi[index] = value;
-                    });
-                  }
-                });
-              },
-              child: ShakeWidget(
-                duration: const Duration(seconds: 3),
-                shakeConstant: shakeConstant,
-                autoPlay: isRemove[index],
-                child: Stack(
-                  alignment: Alignment.topRight,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(width: 1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      height: 90,
-                      width: 200,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  child: ShakeWidget(
+                    duration: const Duration(seconds: 3),
+                    shakeConstant: shakeConstant,
+                    autoPlay: isRemove[index],
+                    child: Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.5),
+                                spreadRadius: 2,
+                                blurRadius: 5,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                            border: Border.all(
+                              width: 1,
+                              color: apiModel.color ?? Colors.black,
+                            ),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          height: 60,
+                          padding: const EdgeInsets.symmetric(horizontal: 15),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              sw(10),
                               SizedBox(
                                 width: 30,
                                 height: 30,
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(10),
-                                  child: CachedNetworkImage(
-                                    imageUrl: selectedApi[index].imageUrl,
-                                    fit: BoxFit.cover,
-                                  ),
+                                  child: SvgPicture.network(apiModel.imageUrl!),
                                 ),
                               ),
-                              sw(8),
+                              sw(10),
                               Text(
-                                selectedApi[index].name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  decoration: TextDecoration.underline,
-                                ),
+                                apiModel.name,
                               ),
                             ],
                           ),
-                          sh(10),
-                          Text(
-                            selectedApi[index].actions.first,
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                ),
+                sh(53)
+              ],
+            ),
+            Transform.translate(
+              offset: const Offset(0, -25),
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 300),
+                opacity: isRemove[index] == false ? 0 : 1,
+                child: IconButton(
+                  onPressed: () async {
+                    await http.delete(
+                      Uri.parse(
+                          'http://localhost:4040/api/workflows/${widget.workflow!.id}/nodes/${listNodes[index].id}'),
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization':
+                            'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                      },
+                    );
+                    setState(() {
+                      isRemove.removeAt(index);
+                      listNodes.removeAt(index);
+                    });
+                  },
+                  icon: Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.red,
+                    ),
+                    padding: const EdgeInsets.all(5),
+                    child: const Icon(
+                      CupertinoIcons.trash,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
                 ),
               ),
             ),
-            if ((selectedApi.last != selectedApi[index])) ...[
+          ],
+        ),
+        Column(
+          children: [
+            if ((listNodes.first == apiModel)) ...[
               Container(
-                height: 30,
-                width: 1,
-                color: Colors.black,
+                height: 17,
+                width: 17,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 2,
+                  ),
+                ),
               ),
               Container(
-                height: 10,
-                width: 10,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.black,
-                ),
-              )
+                height: 45,
+                width: 3,
+                color: Colors.transparent,
+              ),
             ] else ...[
               if (!isPlaying) ...[
                 Container(
-                  height: 30,
-                  width: 1,
-                  color: Colors.black,
+                  height: 17,
+                  width: 17,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xff574ae2),
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 2,
+                    ),
+                  ),
                 ),
                 Container(
-                  height: 10,
-                  width: 10,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.black,
+                  height: 30,
+                  width: 3,
+                  color: Colors.black,
+                ),
+                RotatedBox(
+                  quarterTurns: 2,
+                  child: CustomPaint(
+                    size: const Size(17, 17),
+                    painter: TrianglePainter(),
                   ),
-                )
+                ),
               ] else ...[
                 Container(
                   height: 40,
@@ -247,36 +251,7 @@ class _WorkflowPageState extends State<WorkflowPage>
               ]
             ]
           ],
-        ),
-        Container(
-          width: 50,
-          height: 90,
-          margin: const EdgeInsets.only(bottom: 30),
-          child: AnimatedOpacity(
-            duration: const Duration(milliseconds: 300),
-            opacity: isRemove[index] == false ? 0 : 1,
-            child: IconButton(
-              onPressed: () {
-                setState(() {
-                  isRemove.removeAt(index);
-                  selectedApi.removeAt(index);
-                });
-              },
-              icon: Container(
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.red,
-                ),
-                padding: const EdgeInsets.all(5),
-                child: const Icon(
-                  CupertinoIcons.trash,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-            ),
-          ),
-        ),
+        )
       ],
     );
   }
@@ -285,148 +260,225 @@ class _WorkflowPageState extends State<WorkflowPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff5f5f5),
-      floatingActionButton: selectedApi.isEmpty
-          ? null
-          : FloatingActionButton(
-              backgroundColor: const Color(0xfff2545b),
-              onPressed: () {
-                if (animationController.isCompleted) {
-                  animationController.reverse();
-                } else {
-                  animationController.forward();
-                }
-                setState(() {
-                  isPlaying = !isPlaying;
-                });
-              },
-              child: AnimatedIcon(
-                icon: AnimatedIcons.pause_play,
-                progress: animation,
-                color: Colors.white,
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xff574ae2),
+        onPressed: () {
+          showModalBottomSheet<NodeModel>(
+            context: context,
+            isScrollControlled: true,
+            builder: (context) => ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+              child: SizedBox(
+                height: dh(context) / 1.1,
+                child: const ModalSheetWidget(),
               ),
             ),
+          ).then((NodeModel? value) async {
+            if (value != null) {
+              setState(() {
+                isRemove.add(false);
+              });
+              try {
+                if (value.type == "trigger") {
+                  listNodes.insert(listNodes.length, value);
+                  await http.post(
+                    Uri.parse(
+                        'http://localhost:4040/api/workflows/${widget.workflow!.id}/nodes'),
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization':
+                          'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                    },
+                    body: jsonEncode({
+                      'id': value.id,
+                      'config': {},
+                    }),
+                  );
+                } else {
+                  await http.post(
+                    Uri.parse(
+                        'http://localhost:4040/api/workflows/${widget.workflow!.id}/nodes'),
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization':
+                          'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                    },
+                    body: jsonEncode({
+                      'id': value.id,
+                      'config': {},
+                      if (listNodes.isNotEmpty) ...{
+                        'previous': listNodes[0].id,
+                        'label': value.labels![0]
+                      }
+                    }),
+                  );
+                  setState(() {
+                    listNodes.insert(0, value);
+                  });
+                }
+              } catch (e) {
+                if (kDebugMode) {
+                  print(e);
+                }
+              }
+            }
+          });
+        },
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         leading: CupertinoNavigationBarBackButton(
-          color: Colors.blue,
+          color: const Color(0xff574ae2),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
         actions: [
-          if (selectedApi.isNotEmpty)
-            IconButton(
-              onPressed: () {
-                showCupertinoDialog(
-                  context: context,
-                  builder: (context) {
-                    final TextEditingController nameController =
-                        TextEditingController(
-                      text: widget.index == null
-                          ? ''
-                          : widget.workflow.workflows[widget.index!].name,
-                    );
-                    final TextEditingController descriptionController =
-                        TextEditingController(
-                      text: widget.index == null
-                          ? ''
-                          : widget
-                              .workflow.workflows[widget.index!].description,
-                    );
+          IconButton(
+            onPressed: () {
+              showCupertinoDialog(
+                context: context,
+                builder: (context) {
+                  final TextEditingController nameController =
+                      TextEditingController(
+                    text: widget.workflow == null ? '' : widget.workflow!.name,
+                  );
+                  final TextEditingController descriptionController =
+                      TextEditingController(
+                    text: widget.workflow == null
+                        ? ''
+                        : widget.workflow!.description,
+                  );
 
-                    return CupertinoAlertDialog(
-                      title: const Text('Download your workflow'),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                              'Enter a name and description for your workflow:'),
-                          const SizedBox(height: 8),
-                          CupertinoTextField(
-                            controller: nameController,
-                            placeholder: 'Workflow Name',
-                          ),
-                          const SizedBox(height: 8),
-                          CupertinoTextField(
-                            controller: descriptionController,
-                            placeholder: 'Workflow Description',
-                          ),
-                        ],
-                      ),
-                      actions: [
-                        CupertinoDialogAction(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: const Text(
-                            'Cancel',
-                            style: TextStyle(
-                              color: Color(0xff574ae2),
-                            ),
-                          ),
+                  return CupertinoAlertDialog(
+                    title: const Text('Download your workflow'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                            'Enter a name and description for your workflow:'),
+                        const SizedBox(height: 8),
+                        CupertinoTextField(
+                          controller: nameController,
+                          placeholder: 'Workflow Name',
                         ),
-                        CupertinoDialogAction(
-                          onPressed: () {
-                            final workflowName = nameController.text.trim();
-                            final workflowDescription =
-                                descriptionController.text.trim();
-
-                            if (workflowName.isNotEmpty &&
-                                workflowDescription.isNotEmpty) {
-                              widget.workflow.createWorkflow(
-                                WorkflowModel(
-                                  apis: selectedApi,
-                                  name: workflowName,
-                                  description: workflowDescription,
-                                  uuid: widget.index != null
-                                      ? widget.workflow.workflows[widget.index!]
-                                          .uuid
-                                      : const Uuid().v4(),
-                                ),
-                              );
-                              Navigator.pop(context);
-                              Navigator.pop(context);
-                            } else {
-                              showCupertinoDialog(
-                                context: context,
-                                builder: (context) => CupertinoAlertDialog(
-                                  title: const Text('Error'),
-                                  content: const Text(
-                                      'Workflow textfields cannot be empty.'),
-                                  actions: [
-                                    CupertinoDialogAction(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: const Text(
-                                        'OK',
-                                        style: TextStyle(
-                                          color: Color(0xff574ae2),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                          },
-                          child: const Text(
-                            'Save',
-                            style: TextStyle(
-                              color: Color(0xff574ae2),
-                            ),
-                          ),
+                        const SizedBox(height: 8),
+                        CupertinoTextField(
+                          controller: descriptionController,
+                          placeholder: 'Workflow Description',
                         ),
                       ],
-                    );
-                  },
-                );
-              },
-              icon: const Icon(
-                CupertinoIcons.cloud_download,
-                color: Colors.blue,
-              ),
+                    ),
+                    actions: [
+                      CupertinoDialogAction(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Color(0xff574ae2),
+                          ),
+                        ),
+                      ),
+                      CupertinoDialogAction(
+                        onPressed: () async {
+                          final workflowName = nameController.text.trim();
+                          final workflowDescription =
+                              descriptionController.text.trim();
+
+                          if (workflowName.isNotEmpty &&
+                              workflowDescription.isNotEmpty) {
+                            if (widget.workflow == null) {
+                              try {
+                                await http.post(
+                                  Uri.parse(
+                                      'http://localhost:4040/api/workflows'),
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization':
+                                        'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                                  },
+                                  body: jsonEncode({
+                                    'name': workflowName,
+                                    'description': workflowDescription,
+                                    "mobile": true,
+                                  }),
+                                );
+                              } catch (e) {
+                                if (kDebugMode) {
+                                  print(e);
+                                }
+                              }
+                            } else {
+                              try {
+                                await http.patch(
+                                  Uri.parse(
+                                      'http://localhost:4040/api/workflows/${widget.workflow!.id}'),
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization':
+                                        'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}'
+                                  },
+                                  body: jsonEncode({
+                                    "name": workflowName,
+                                    "description": workflowDescription,
+                                    "status": "enabled"
+                                  }),
+                                );
+                              } catch (e) {
+                                if (kDebugMode) {
+                                  print(e);
+                                }
+                              }
+                            }
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                          } else {
+                            showCupertinoDialog(
+                              context: context,
+                              builder: (context) => CupertinoAlertDialog(
+                                title: const Text('Error'),
+                                content: const Text(
+                                    'Workflow textfields cannot be empty.'),
+                                actions: [
+                                  CupertinoDialogAction(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text(
+                                      'OK',
+                                      style: TextStyle(
+                                        color: Color(0xff574ae2),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text(
+                          'Save',
+                          style: TextStyle(
+                            color: Color(0xff574ae2),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            icon: const Icon(
+              CupertinoIcons.cloud_download,
+              color: Color(0xff574ae2),
             ),
+          ),
         ],
         title: const Text('Wytness'),
         backgroundColor: Colors.transparent,
@@ -444,54 +496,123 @@ class _WorkflowPageState extends State<WorkflowPage>
           ],
         ),
       ),
-      body: GestureDetector(
-        onTap: () {
-          setState(() {
-            isRemove = List.generate(selectedApi.length + 1, (index) => false);
-          });
-        },
-        child: ReorderableListView.builder(
-          header: sh(150),
-          footer: addApi(key: const ValueKey('addApi')),
-          proxyDecorator: (child, index, animation) {
-            return AnimatedBuilder(
-              animation: animation,
-              builder: (context, child) {
-                return Transform(
-                  transform: Matrix4.translationValues(
-                    0,
-                    animation.value * 10,
-                    0,
-                  ),
-                  child: Transform.scale(
-                    scale: 1.2,
-                    child: child,
+      body: Stack(
+        children: [
+          CustomPaint(
+            size: const Size(double.infinity, double.infinity),
+            painter: DottedBackgroundPainter(),
+          ),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                isRemove = List.generate(nodes.length + 1, (index) => false);
+              });
+            },
+            child: ReorderableListView.builder(
+              proxyDecorator: (child, index, animation) {
+                return AnimatedBuilder(
+                  animation: animation,
+                  builder: (context, child) {
+                    return Transform(
+                      transform: Matrix4.translationValues(
+                        0,
+                        animation.value * 10,
+                        0,
+                      ),
+                      child: Transform.scale(
+                        scale: 1.2,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: child,
+                );
+              },
+              header: Container(
+                height: 100,
+              ),
+              reverse: true,
+              itemCount: listNodes.length,
+              onReorder: (oldIndex, newIndex) {
+                if (newIndex > listNodes.length) {
+                  return;
+                }
+                if (oldIndex < listNodes.length) {
+                  setState(() {
+                    if (oldIndex < newIndex) {
+                      newIndex -= 1;
+                    }
+                    final item = listNodes.removeAt(oldIndex);
+                    listNodes.insert(newIndex, item);
+                  });
+                }
+              },
+              itemBuilder: (context, index) {
+                return Transform.translate(
+                  offset: Offset(0, 15 * index.toDouble()),
+                  key: ValueKey(index),
+                  child: apiItem(
+                    index,
+                    listNodes[index],
                   ),
                 );
               },
-              child: child,
-            );
-          },
-          itemCount: selectedApi.length,
-          onReorder: (oldIndex, newIndex) {
-            if (newIndex > selectedApi.length) {
-              return;
-            }
-            if (oldIndex < selectedApi.length) {
-              setState(() {
-                if (oldIndex < newIndex) {
-                  newIndex -= 1;
-                }
-                final item = selectedApi.removeAt(oldIndex);
-                selectedApi.insert(newIndex, item);
-              });
-            }
-          },
-          itemBuilder: (context, index) {
-            return apiItem(index, key: ValueKey(selectedApi[index]));
-          },
-        ),
+            ),
+          ),
+        ],
       ),
     );
+  }
+}
+
+class DottedBackgroundPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint dotPaint = Paint()
+      ..color = Colors.grey.withOpacity(0.3)
+      ..style = PaintingStyle.fill;
+
+    const double dotRadius = 2.0;
+    const double spacing = 16.0;
+
+    for (double y = 0; y < size.height; y += spacing) {
+      for (double x = 0; x < size.width; x += spacing) {
+        canvas.drawCircle(Offset(x, y), dotRadius, dotPaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
+}
+
+class TrianglePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Paint trianglePaint = Paint()
+      ..color = const Color(0xff574ae2)
+      ..style = PaintingStyle.fill;
+
+    final Paint borderPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    final Path trianglePath = Path()
+      ..moveTo(size.width / 2, 0)
+      ..lineTo(0, size.height)
+      ..lineTo(size.width, size.height)
+      ..close();
+
+    canvas.drawPath(trianglePath, trianglePaint);
+
+    canvas.drawPath(trianglePath, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
   }
 }
