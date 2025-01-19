@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,11 +9,10 @@ import 'package:mobile/model/apis.module.dart';
 import 'package:mobile/model/node.module.dart';
 
 class AuthService {
-  static String url = Platform.isAndroid ? '10.0.2.2:4040' : 'wytness.fr';
   static Future<String> login(String email, String password) async {
     try {
       http.Response response = await http.post(
-        Uri.parse('http://127.0.0.1:4040/api/auth/login'),
+        Uri.parse('$url/api/auth/login'),
         body: {'email': email, 'password': password},
       );
       final data = jsonDecode(response.body);
@@ -41,8 +39,7 @@ class AuthService {
   ) async {
     try {
       final response = await http.post(
-        Uri.parse(
-            'http://${Platform.isIOS ? 'localhost' : '10.0.2.2'}:4040/api/auth/register'),
+        Uri.parse('$url/api/auth/register'),
         body: {
           'email': email,
           'password': password,
@@ -73,14 +70,14 @@ class AuthService {
   static Future<void> services() async {
     try {
       final response = await http.get(
-        Uri.parse('http://127.0.0.1:4040/api/services'),
+        Uri.parse('$url/api/services'),
         headers: {
           'Authorization':
               'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}',
         },
       );
       final connected = await http.get(
-        Uri.parse('http://localhost:4040/api/services/connected'),
+        Uri.parse('$url/api/services/connected'),
         headers: {
           'Authorization':
               'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}',
@@ -88,17 +85,12 @@ class AuthService {
       );
       List<dynamic> data = jsonDecode(response.body);
       List<dynamic> auth = jsonDecode(connected.body);
-      for (var connect in auth) {
-        print(connect);
-      }
       for (var service in data) {
         if (apis.map((e) => e.name).contains(service['name'])) {
           continue;
         }
         final connection = await http.get(
-          Uri.parse(
-            'http://127.0.0.1:4040/api/services/${service['name']}/nodes',
-          ),
+          Uri.parse('$url/api/services/${service['name']}/nodes'),
           headers: {
             'Authorization':
                 'Bearer ${await FirebaseAuth.instance.currentUser!.getIdToken()}',
@@ -117,6 +109,7 @@ class AuthService {
             .where((e) => e['type'] == 'action')
             .map((e) => NodeModel.fromJson(e))
             .toList();
+
         apis.add(
           ApiModel(
             name: service['name'],

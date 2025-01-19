@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,3 +24,5 @@ Widget sw(double width) {
 }
 
 late SharedPreferences localUser;
+
+String url = 'http://${Platform.isIOS ? 'localhost' : '10.0.2.2'}:4040';
