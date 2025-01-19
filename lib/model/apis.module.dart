@@ -1,13 +1,14 @@
 import 'dart:ui';
 
+import 'package:mobile/model/node.module.dart';
 import 'package:mobile/service/auth.service.dart';
 
 class ApiModel {
   final String name;
   final String imageUrl;
   final String description;
-  final List<Map<String, dynamic>> actions;
-  final List<Map<String, dynamic>> reactions;
+  final List<NodeModel> actions;
+  final List<NodeModel> reactions;
   Color? color;
   final Map<dynamic, dynamic> auth;
 
@@ -22,15 +23,16 @@ class ApiModel {
   });
 
   factory ApiModel.fromJson(Map<String, dynamic> json) {
+    print(json);
     return ApiModel(
       name: json['name'],
       imageUrl: json['imageUrl'],
       description: json['description'],
       actions: (json['actions'] as List)
-          .map((action) => Map<String, dynamic>.from(action))
+          .map((action) => NodeModel.fromJson(action))
           .toList(),
       reactions: (json['reactions'] as List)
-          .map((reaction) => Map<String, dynamic>.from(reaction))
+          .map((action) => NodeModel.fromJson(action))
           .toList(),
       color: json.containsKey('color') ? parseColor(json['color']) : null,
       auth: json['auth'],
